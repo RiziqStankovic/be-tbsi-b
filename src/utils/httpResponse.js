@@ -4,7 +4,10 @@ const STAT_FLD = 'FAILED';
 const responseOnly = (res, code, message) => {
     return res.status(code).json({
         status: code >= 200 && code <= 299 ? STAT_SCC : STAT_FLD,
-        message: message || code == 500 ? 'Server processing error' : message,
+        message:
+            message === null || code == 500
+                ? 'Server processing error'
+                : message,
     });
 };
 
@@ -27,11 +30,11 @@ const responseValidationError = (res, errorFields) => {
     return responseData(res, 400, errorFields, 'Validation Error');
 };
 
-const responsePagination = (res, data, paginateInfo) => {
+const responsePagination = (res, data, paginate_info) => {
     return res.status(200).json({
         status: STAT_SCC,
         data,
-        paginateInfo,
+        paginate_info,
         message: 'Get all data success.',
     });
 };

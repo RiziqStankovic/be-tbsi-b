@@ -1,4 +1,6 @@
+const mongoose = require('mongoose');
 const { responseData, responseOnly } = require('./httpResponse');
+const pagination = require('./pagination');
 
 const save = async (res, modelName, data) => {
     try {
@@ -13,17 +15,40 @@ const save = async (res, modelName, data) => {
     }
 };
 
-const get = async (req, res, modelName, restrictFind, populate) => {
-    return await pagination(req, res, modelName, restrictFind, populate);
+const get = async (req, res, modelName, populate) => {
+    if (req.query.use_paginate) {
+        return await pagination(req, res, modelName, populate);
+    }
+
+    try {
+        const Model = mongoose.connection.models[modelName];
+
+        let filter = {};
+
+        if (req.query.search_by && req.query.search_val) {
+            filter = { [req.query.search_by]: req.query.search_val };
+        }
+
+        const getall = await Model.find(filter).lean();
+
+        const message = getall.length > 0 ? 'Data found.' : 'No data found.';
+
+        return responseData(res, 200, getall, message);
+    } catch (error) {
+        console.log(error);
+        return responseOnly(res, 500);
+    }
 };
 
-const show = async (res, modelName, findbyField, findbyValue) => {
+const show = async (res, modelName, findbyField, findbyValue, populate) => {
     try {
         const Model = mongoose.connection.models[modelName];
 
         const getone = await Model.findOne({
             [findbyField]: findbyValue,
-        }).lean();
+        })
+            .populate(populate ?? '')
+            .lean();
 
         return responseData(res, 200, getone, 'Data found.');
     } catch (error) {

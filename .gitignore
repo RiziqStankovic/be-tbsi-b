@@ -9,6 +9,7 @@ logs
 # Dependency directories
 jspm_packages/
 bower_components/
+package-lock.json
 
 # Build output
 dist/

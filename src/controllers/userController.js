@@ -3,11 +3,14 @@ const {
     validateRequest,
     validatePasswordConfirmation,
 } = require('../utils/validator');
+const { responseValidationError } = require('../utils/httpResponse');
+const crudService = require('../utils/crudService');
+const { hashPassword } = require('../utils/bcrypt');
 
 const Model = User.modelName;
 
-const createAccount = async (req, res) => {
-    const { body } = req.body;
+const createUser = async (req, res) => {
+    const { body } = req;
 
     let errorFields = {};
 
@@ -21,7 +24,7 @@ const createAccount = async (req, res) => {
         errorFields,
         'password',
         body.password,
-        'required;min=6'
+        'required;min=6;onecapital;onenumber;onesymbol'
     );
     validatePasswordConfirmation(
         errorFields,
@@ -54,13 +57,24 @@ const createAccount = async (req, res) => {
         'required;oneof=MASIH ADA:SUDAH TIDAK ADA'
     );
 
-    if (Array.isArray(body.maintainedApps) && body.maintainedApps.length > 0) {
+    await validateRequest(
+        errorFields,
+        'maintainedApps',
+        body.maintainedApps,
+        'required;array:notempty'
+    );
+
+    let num = 0;
+    if (body.maintainedApps.length > 0) {
+        num = 0;
         for (let mApps of body.maintainedApps) {
+            num++;
             await validateRequest(
                 errorFields,
                 'maintainedApps.name',
                 mApps.name,
-                'required'
+                'required',
+                'Nama aplikasi rawatan ' + num + ' is rqeuired.'
             );
             await validateRequest(
                 errorFields,
@@ -82,4 +96,67 @@ const createAccount = async (req, res) => {
             );
         }
     }
+
+    if (body.paymentFailedApps) {
+        await validateRequest(
+            errorFields,
+            'paymentFailedApps',
+            body.paymentFailedApps,
+            'array'
+        );
+    }
+
+    if (body.rejectedApps) {
+        await validateRequest(
+            errorFields,
+            'rejectedApps',
+            body.rejectedApps,
+            'array'
+        );
+    }
+
+    await validateRequest(
+        errorFields,
+        'branch',
+        body.branch,
+        'required;objectid'
+    );
+
+    if (Object.keys(errorFields).length > 0) {
+        return responseValidationError(res, errorFields);
+    }
+
+    const payload = {
+        ...body,
+        password: hashPassword(body.password),
+    };
+
+    return await crudService.save(res, Model, payload);
+};
+
+const getUsers = async (req, res) => {
+    const populate = 'branch';
+
+    return await crudService.get(req, res, Model, populate);
+};
+
+const showUser = async (req, res) => {
+    const populate = 'branch';
+    return await crudService.show(res, Model, '_id', req.params.id, populate);
+};
+
+const updateUser = async (req, res) => {
+    return await crudService.update(res, Model, req.body, req, params.id);
+};
+
+const removeUser = async (req, res) => {
+    return await crudService.remove(res, Model, req.params.id);
+};
+
+module.exports = {
+    createUser,
+    getUsers,
+    showUser,
+    updateUser,
+    removeUser,
 };

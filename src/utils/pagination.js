@@ -1,19 +1,12 @@
 const mongoose = require('mongoose');
 const { responsePagination, responseOnly } = require('./httpResponse');
 
-const pagination = async (req, res, modelName, restrictFind, populate) => {
+const pagination = async (req, res, modelName, populate) => {
     try {
         const Model = mongoose.connection.models[modelName];
 
-        let {
-            page,
-            limit,
-            sort_by,
-            sort_dir,
-            search_by,
-            search_val,
-            use_paginate,
-        } = req.query;
+        let { page, limit, sort_by, sort_dir, search_by, search_val } =
+            req.query;
 
         let resp;
 
@@ -33,22 +26,14 @@ const pagination = async (req, res, modelName, restrictFind, populate) => {
         limit = parseInt(limit) || 10;
         const skip = (page - 1) * limit;
 
-        if (use_paginate) {
-            resp = await Model.find(filter)
-                .sort(sort)
-                .skip(skip)
-                .limit(limit)
-                .populate(populate ?? '')
-                .lean();
-        } else {
-            resp = await Model.find(restrictFind ? filter : {})
-                .sort(sort)
-                .populate(populate ?? '');
-        }
+        resp = await Model.find(filter)
+            .sort(sort)
+            .skip(skip)
+            .limit(limit)
+            .populate(populate ?? '')
+            .lean();
 
-        const totalData = await Model.countDocuments(
-            restrictFind ? filter : {}
-        );
+        const totalData = await Model.countDocuments();
         const totalPages = Math.ceil(totalData / limit);
 
         const paginateInfo = {
