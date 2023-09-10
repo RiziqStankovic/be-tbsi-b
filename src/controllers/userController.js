@@ -3,9 +3,15 @@ const {
     validateRequest,
     validatePasswordConfirmation,
 } = require('../utils/validator');
-const { responseValidationError } = require('../utils/httpResponse');
+const {
+    responseValidationError,
+    responseOnly,
+    responseAuth,
+} = require('../utils/httpResponse');
 const crudService = require('../utils/crudService');
-const { hashPassword } = require('../utils/bcrypt');
+const { hashPassword, comparePassword } = require('../utils/bcrypt');
+const generateSerialNo = require('../utils/generateSerialNo');
+const { generateToken } = require('../utils/jwt');
 
 const Model = User.modelName;
 
@@ -32,7 +38,12 @@ const createUser = async (req, res) => {
         body.passwordConfirmation
     );
     await validateRequest(errorFields, 'name', body.name, 'required');
-    await validateRequest(errorFields, 'nik', body.nik, 'required');
+    await validateRequest(
+        errorFields,
+        'nik',
+        body.nik,
+        'required;min=16;max=16'
+    );
     await validateRequest(errorFields, 'age', body.age, 'required');
     await validateRequest(errorFields, 'pob', body.pob, 'required');
     await validateRequest(errorFields, 'dob', body.dob, 'required');
@@ -57,6 +68,36 @@ const createUser = async (req, res) => {
         'required;oneof=MASIH ADA:SUDAH TIDAK ADA'
     );
 
+    if (!body.recommendation || Object.keys(body.recommendation).length === 0) {
+        await validateRequest(
+            errorFields,
+            'recommendation',
+            body.recommendation.person,
+            'required',
+            'Rekomendasi harus diisi.'
+        );
+    }
+
+    if (Object.keys(body.recommendation).length > 0) {
+        if ('person' in body.recommendation) {
+            await validateRequest(
+                errorFields,
+                'recommendation',
+                body.recommendation.person,
+                'required',
+                'Rekomendasi dari perorangan tidak boleh kosong.'
+            );
+        } else if ('socialMedia' in body.recommendation) {
+            await validateRequest(
+                errorFields,
+                'recommendation',
+                body.recommendation.socialMedia,
+                'required',
+                'Rekomendasi dari sosial media tidak boleh kosong'
+            );
+        }
+    }
+
     await validateRequest(
         errorFields,
         'maintainedApps',
@@ -65,35 +106,53 @@ const createUser = async (req, res) => {
     );
 
     let num = 0;
+    let idx = 0;
     if (body.maintainedApps.length > 0) {
-        num = 0;
+        num = 1;
         for (let mApps of body.maintainedApps) {
-            num++;
             await validateRequest(
                 errorFields,
-                'maintainedApps.name',
+                'maintainedApps.name' + idx,
                 mApps.name,
                 'required',
-                'Nama aplikasi rawatan ' + num + ' is rqeuired.'
+                'Nama aplikasi rawatan ke ' + num + ' wajib diisi.'
             );
             await validateRequest(
                 errorFields,
-                'maintainedApps.totalLimit',
+                'maintainedApps.totalLimit' + idx,
                 mApps.totalLimit,
-                'required'
+                'required',
+                'Total limit aplikasi rawatan ke ' + num + ' wajib diisi.'
+            );
+
+            await validateRequest(
+                errorFields,
+                'maintainedApps.totalLimit' + idx,
+                mApps.totalLimit,
+                'numeric',
+                'Total limit aplikasi rawatan ke ' +
+                    num +
+                    ' harus berupa angka numeric.'
             );
             await validateRequest(
                 errorFields,
-                'maintainedApps.dueDate',
+                'maintainedApps.dueDate' + idx,
                 mApps.dueDate,
-                'required;fromnow:before'
+                'required',
+                'Tanggal jatuh tempo aplikasi rawatan ke ' +
+                    num +
+                    ' harus diisi.'
             );
             await validateRequest(
                 errorFields,
-                'maintainedApps.remaining',
-                mApps.remaining,
-                'required'
+                'maintainedApps.remaining' + idx,
+                mApps.remainingInstallment,
+                'required',
+                'Sisa angsuran aplikasi rawatan ke ' + num + ' harus diisi.'
             );
+
+            num++;
+            idx++;
         }
     }
 
@@ -126,12 +185,16 @@ const createUser = async (req, res) => {
         return responseValidationError(res, errorFields);
     }
 
+    const serialNo = await generateSerialNo();
+
     const payload = {
         ...body,
         password: hashPassword(body.password),
+        serialNo,
     };
 
     return await crudService.save(res, Model, payload);
+    // return responseOnly(res, 200, 'Sip');
 };
 
 const getUsers = async (req, res) => {
@@ -153,10 +216,37 @@ const removeUser = async (req, res) => {
     return await crudService.remove(res, Model, req.params.id);
 };
 
+const authenticateUser = async (req, res) => {
+    try {
+        const { email, password } = req.body;
+
+        const user = await User.findOne({ email }).lean();
+        if (!user) {
+            return responseOnly(res, 400, 'Email salah.');
+        }
+
+        if (!comparePassword(password, user.password)) {
+            return responseOnly(res, 400, 'Password salah.');
+        }
+
+        const payload = {
+            id: user._id,
+        };
+
+        const token = generateToken(payload);
+
+        return responseAuth(res, token);
+    } catch (error) {
+        console.log(error);
+        return responseOnly(res, 500);
+    }
+};
+
 module.exports = {
     createUser,
     getUsers,
     showUser,
     updateUser,
     removeUser,
+    authenticateUser,
 };

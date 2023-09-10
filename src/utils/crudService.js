@@ -29,7 +29,9 @@ const get = async (req, res, modelName, populate) => {
             filter = { [req.query.search_by]: req.query.search_val };
         }
 
-        const getall = await Model.find(filter).lean();
+        const getall = await Model.find(filter)
+            .populate(populate ?? '')
+            .lean();
 
         const message = getall.length > 0 ? 'Data found.' : 'No data found.';
 

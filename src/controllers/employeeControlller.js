@@ -5,12 +5,19 @@ const {
 } = require('../utils/validator');
 const crudService = require('../utils/crudService');
 const { hashPassword } = require('../utils/bcrypt');
-const { responseValidationError } = require('../utils/httpResponse');
+const {
+    responseValidationError,
+    responseOnly,
+} = require('../utils/httpResponse');
+const path = require('path');
+const { uploadImage } = require('../utils/cloudinary');
 
 const ModelEmployee = Employee.modelName;
 
 const createEmployee = async (req, res) => {
-    const { body } = req;
+    const { body, file } = req;
+
+    const fileExtension = path.extname(file.originalname);
 
     /* Validation */
     let error_field = {};
@@ -33,6 +40,13 @@ const createEmployee = async (req, res) => {
         body.password,
         body.passwordConfirmation
     );
+    await validateRequest(
+        error_field,
+        'photo',
+        fileExtension,
+        'required;oneof=.jpg:.png:.jpeg',
+        'Ekstensi photo harus salah satu dari : jpg, png, jpeg'
+    );
     await validateRequest(error_field, 'role', body.role, 'required;objectid');
     await validateRequest(
         error_field,
@@ -45,11 +59,15 @@ const createEmployee = async (req, res) => {
         return responseValidationError(res, error_field);
     }
 
+    const photoUrl = await uploadImage(file.buffer);
+
     const payload = {
         ...body,
         password: hashPassword(body.password),
+        photo: photoUrl,
     };
 
+    // return responseOnly(res, 200, 'Sip');
     return await crudService.save(res, ModelEmployee, payload);
 };
 

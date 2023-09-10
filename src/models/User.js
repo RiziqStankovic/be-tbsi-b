@@ -25,9 +25,9 @@ const userSchema = new Schema(
         maintainedApps: [
             {
                 name: String,
-                totalLimit: String,
+                totalLimit: Number,
                 dueDate: Date,
-                remaining: String,
+                remainingInstallment: Number,
             },
         ],
         paymentFailedApps: [String],

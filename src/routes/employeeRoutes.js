@@ -1,7 +1,14 @@
 const router = require('express').Router();
 const Employee = require('../controllers/employeeControlller');
 
-router.post('/create-employee', Employee.createEmployee);
+/* Middlewares */
+const upload = require('../middlewares/upload');
+
+router.post(
+    '/create-employee',
+    upload.single('photo'),
+    Employee.createEmployee
+);
 router.get('/get-employees', Employee.getEmployees);
 router.get('/:id/show-employee', Employee.showEmploye);
 router.patch('/:id/update-employee', Employee.updateEmployee);

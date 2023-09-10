@@ -13,15 +13,15 @@ const validateRequest = async (
         if (rule == 'required') {
             if (!requestValue || requestValue == '') {
                 errorFields[requestKey] =
-                    customMessage ?? toCapitalize(requestKey) + ' is required.';
+                    customMessage ?? toCapitalize(requestKey) + ' harus diisi.';
                 return;
             }
         } else if (rule == 'numeric') {
-            if (!isNaN(parseFloat(requestValue)) && isFinite(requestValue)) {
+            if (typeof requestValue !== 'number') {
                 errorFields[requestKey] =
                     customMessage ??
                     toCapitalize(requestKey) +
-                        ' should be a numeric value [0-9].';
+                        ' harus berupa nilai numerik [0-9].';
                 return;
             }
         } else if (rule == 'email') {
@@ -30,7 +30,7 @@ const validateRequest = async (
                 errorFields[requestKey] =
                     customMessage ??
                     toCapitalize(requestKey) +
-                        ' should be a valid email, example@test.com';
+                        ' harus berupa email yang valid, contoh: johndoe1234@gmail.com';
                 return;
             }
         } else if (rule.includes('oneof')) {
@@ -40,7 +40,7 @@ const validateRequest = async (
                 errorFields[requestKey] =
                     customMessage ??
                     toCapitalize(requestKey) +
-                        ' should be one of these values : ' +
+                        ' harus salah satu dari nilai berikut: ' +
                         oneofNumArr.join(', ') +
                         '.';
                 return;
@@ -49,20 +49,20 @@ const validateRequest = async (
             let maxNum = parseInt(rule.split('=')[1]);
             if (rules.includes('numeric')) {
                 if (requestValue > maxNum) {
-                    errorFields[requestValue] =
-                        'Maximum value of ' +
+                    errorFields[requestKey] =
+                        'Nilai maksimum dari ' +
                         toCapitalize(requestKey) +
-                        ' is ' +
+                        ' adalah ' +
                         maxNum +
                         '.';
                     return;
                 }
             } else {
                 if (requestValue.length > maxNum) {
-                    errorFields[requestValue] =
-                        'Maximum length of ' +
+                    errorFields[requestKey] =
+                        'Panjang maksimum dari ' +
                         toCapitalize(requestKey) +
-                        ' is ' +
+                        ' adalah ' +
                         maxNum +
                         '.';
                     return;
@@ -72,20 +72,20 @@ const validateRequest = async (
             let minNum = parseInt(rule.split('=')[1]);
             if (rules.includes('numeric')) {
                 if (requestValue < minNum) {
-                    errorFields[requestValue] =
-                        'Mininum value of ' +
+                    errorFields[requestKey] =
+                        'Nilai minimum dari ' +
                         toCapitalize(requestKey) +
-                        ' is ' +
+                        ' adalah ' +
                         minNum +
                         '.';
                     return;
                 }
             } else {
                 if (requestValue.length < minNum) {
-                    errorFields[requestValue] =
-                        'Minimum length of ' +
+                    errorFields[requestKey] =
+                        'Panjang minimum dari ' +
                         toCapitalize(requestKey) +
-                        ' is ' +
+                        ' adalah ' +
                         minNum +
                         '.';
                     return;
@@ -103,7 +103,7 @@ const validateRequest = async (
                 if (find) {
                     errorFields[requestKey] =
                         customMessage ??
-                        toCapitalize(requestKey) + ' is already exist.';
+                        toCapitalize(requestKey) + ' sudah ada.';
                     return;
                 }
             } catch (error) {
@@ -122,7 +122,7 @@ const validateRequest = async (
             if (!Array.isArray(requestValue)) {
                 errorFields[requestKey] =
                     customMessage ??
-                    toCapitalize(requestKey) + ' should be an array.';
+                    toCapitalize(requestKey) + ' harus berupa sebuah array.';
                 return;
             }
             if (rule.includes(':')) {
@@ -132,7 +132,8 @@ const validateRequest = async (
                         if (requestValue.length == 0) {
                             errorFields[requestKey] =
                                 customMessage ??
-                                toCapitalize(requestKey) + ' can not empty.';
+                                toCapitalize(requestKey) +
+                                    ' tidak boleh kosong.';
                             return;
                         }
                     }
@@ -144,7 +145,7 @@ const validateRequest = async (
                 errorFields[requestKey] =
                     customMessage ??
                     toCapitalize(requestKey) +
-                        ' should contain at least one capital letter.';
+                        ' harus mengandung setidaknya satu huruf kapital.';
                 return;
             }
         } else if (rule == 'onenumber') {
@@ -153,7 +154,7 @@ const validateRequest = async (
                 errorFields[requestKey] =
                     customMessage ??
                     toCapitalize(requestKey) +
-                        ' should contain at least one number.';
+                        ' harus mengandung setidaknya satu angka.';
                 return;
             }
         } else if (rule == 'onesymbol') {
@@ -162,14 +163,14 @@ const validateRequest = async (
                 errorFields[requestKey] =
                     customMessage ??
                     toCapitalize(requestKey) +
-                        ' should contain at least one symbol character.';
+                        ' harus mengandung setidaknya satu karakter simbol.';
                 return;
             }
         } else if (rule.includes('objectid')) {
             if (!mongoose.isValidObjectId(requestValue)) {
                 errorFields[requestKey] =
                     toCapitalize(requestKey) +
-                    ' is not valid mongoose object id.';
+                    ' bukan merupakan ID objek mongoose yang valid.';
                 return;
             }
 
@@ -180,7 +181,7 @@ const validateRequest = async (
                 if (!findone) {
                     errorFields[requestKey] =
                         toCapitalize(requestKey) +
-                        ' is not exist in model ' +
+                        ' tidak ditemukan pada model ' +
                         toCapitalize(modelName);
                 }
             }
@@ -196,13 +197,13 @@ const validatePasswordConfirmation = (
 ) => {
     if (passwordConfirmation === null || passwordConfirmation === undefined) {
         errorFields.passwordConfirmation =
-            customMessage ?? 'Password Confirmation is required';
+            customMessage ?? 'Konfirmasi Password harus diisi.';
         return;
     }
 
     if (password !== passwordConfirmation) {
         errorFields.passwordConfirmation =
-            customMessage ?? 'Password Confirmation does not match';
+            customMessage ?? 'Konfirmasi Password tidak sesuai.';
         return;
     }
 };

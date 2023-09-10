@@ -18,7 +18,12 @@ const pagination = async (req, res, modelName, populate) => {
 
         let sort = {};
 
-        if (sort_by && sort_dir) {
+        if (
+            sort_by &&
+            sort_dir &&
+            (sort_dir.toLowerCase() == 'asc' ||
+                sort_dir.toLowerCase() == 'desc')
+        ) {
             sort = { [sort_by]: sort_dir.toLowerCase() == 'asc' ? 1 : -1 };
         }
 

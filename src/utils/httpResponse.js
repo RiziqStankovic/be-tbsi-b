@@ -6,7 +6,7 @@ const responseOnly = (res, code, message) => {
         status: code >= 200 && code <= 299 ? STAT_SCC : STAT_FLD,
         message:
             message === null || code == 500
-                ? 'Server processing error'
+                ? 'Server processing error.'
                 : message,
     });
 };
@@ -27,7 +27,7 @@ const responseData = (res, code, data, message) => {
 };
 
 const responseValidationError = (res, errorFields) => {
-    return responseData(res, 400, errorFields, 'Validation Error');
+    return responseData(res, 400, errorFields, 'Validation Error.');
 };
 
 const responsePagination = (res, data, paginate_info) => {
@@ -46,10 +46,19 @@ const responseAPINotFound = (res) => {
     });
 };
 
+const responseAuth = (res, token) => {
+    return res.status(200).json({
+        status: STAT_SCC,
+        token,
+        message: 'Authentication Success.',
+    });
+};
+
 module.exports = {
     responseOnly,
     responseData,
     responsePagination,
     responseAPINotFound,
     responseValidationError,
+    responseAuth,
 };
