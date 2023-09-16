@@ -15,7 +15,7 @@ const save = async (res, modelName, data) => {
     }
 };
 
-const get = async (req, res, modelName, populate) => {
+const get = async (req, res, modelName, populate, filter) => {
     if (req.query.use_paginate) {
         return await pagination(req, res, modelName, populate);
     }
@@ -23,17 +23,15 @@ const get = async (req, res, modelName, populate) => {
     try {
         const Model = mongoose.connection.models[modelName];
 
-        let filter = {};
-
-        if (req.query.search_by && req.query.search_val) {
-            filter = { [req.query.search_by]: req.query.search_val };
-        }
-
-        const getall = await Model.find(filter)
+        const getall = await Model.find(filter ?? {})
+            .select('-password')
             .populate(populate ?? '')
             .lean();
 
-        const message = getall.length > 0 ? 'Data found.' : 'No data found.';
+        const message =
+            getall.length > 0
+                ? 'Data ditemukan.'
+                : 'Tidak ada data yang tersedia.';
 
         return responseData(res, 200, getall, message);
     } catch (error) {

@@ -5,7 +5,10 @@ const schema = new Schema(
         name: String,
         email: String,
         password: String,
-        photo: String,
+        photo: {
+            url: String,
+            public_id: String,
+        },
         role: {
             type: Schema.Types.ObjectId,
             ref: 'Role',

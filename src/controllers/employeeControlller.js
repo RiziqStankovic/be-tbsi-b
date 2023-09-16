@@ -4,13 +4,17 @@ const {
     validatePasswordConfirmation,
 } = require('../utils/validator');
 const crudService = require('../utils/crudService');
-const { hashPassword } = require('../utils/bcrypt');
+const { hashPassword, comparePassword } = require('../utils/bcrypt');
 const {
     responseValidationError,
     responseOnly,
+    responseAPINotFound,
+    responseAuth,
 } = require('../utils/httpResponse');
 const path = require('path');
 const { uploadImage } = require('../utils/cloudinary');
+const { generateToken } = require('../utils/jwt');
+const { EMP_FLD_NAME, DFLT_FINDBY_VAL } = require('../utils/constants');
 
 const ModelEmployee = Employee.modelName;
 
@@ -59,12 +63,15 @@ const createEmployee = async (req, res) => {
         return responseValidationError(res, error_field);
     }
 
-    const photoUrl = await uploadImage(file.buffer);
+    const photo = await uploadImage(file.buffer, EMP_FLD_NAME);
 
     const payload = {
         ...body,
         password: hashPassword(body.password),
-        photo: photoUrl,
+        photo: {
+            url: photo.secure_url,
+            public_id: photo.public_id,
+        },
     };
 
     // return responseOnly(res, 200, 'Sip');
@@ -82,7 +89,7 @@ const showEmploye = async (req, res) => {
     return await crudService.show(
         res,
         ModelEmployee,
-        '_id',
+        DFLT_FINDBY_VAL,
         req.params.id,
         populate
     );
@@ -101,10 +108,39 @@ const removeEmployee = async (req, res) => {
     return await crudService.remove(res, ModelEmployee, req.params.id);
 };
 
+const authenticateEmploye = async (req, res) => {
+    try {
+        const { email, password } = req.body;
+
+        const employee = await Employee.findOne({ email }).lean();
+        if (!employee) {
+            return responseOnly(res, 400, 'Email salah.');
+        }
+
+        if (!comparePassword(password, employee.password)) {
+            return responseOnly(res, 400, 'Password salah.');
+        }
+
+        const payload = {
+            id: employee._id,
+            roleID: employee.role,
+            branchID: employee.branch,
+        };
+
+        const token = generateToken(payload);
+
+        return responseAuth(res, token);
+    } catch (error) {
+        console.log(error);
+        return responseOnly(res, 500);
+    }
+};
+
 module.exports = {
     createEmployee,
     getEmployees,
     showEmploye,
     removeEmployee,
     updateEmployee,
+    authenticateEmploye,
 };

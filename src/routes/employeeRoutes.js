@@ -9,6 +9,7 @@ router.post(
     upload.single('photo'),
     Employee.createEmployee
 );
+router.post('/login', Employee.authenticateEmploye);
 router.get('/get-employees', Employee.getEmployees);
 router.get('/:id/show-employee', Employee.showEmploye);
 router.patch('/:id/update-employee', Employee.updateEmployee);

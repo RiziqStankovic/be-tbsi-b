@@ -21,7 +21,10 @@ const uploadImage = async (imageBuffer, folder) => {
                         console.log(error);
                         reject(error);
                     } else {
-                        resolve(result.secure_url);
+                        resolve({
+                            public_id: result.public_id,
+                            secure_url: result.secure_url,
+                        });
                     }
                 }
             )
