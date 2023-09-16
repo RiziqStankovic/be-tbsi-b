@@ -20,3 +20,6 @@ build/
 out/
 out/
 out/
+
+# doc
+dump.txt

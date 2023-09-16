@@ -17,7 +17,7 @@ const save = async (res, modelName, data) => {
 
 const get = async (req, res, modelName, populate, filter) => {
     if (req.query.use_paginate) {
-        return await pagination(req, res, modelName, populate);
+        return await pagination(req, res, modelName, populate, filter);
     }
 
     try {

@@ -112,7 +112,13 @@ const authenticateEmploye = async (req, res) => {
     try {
         const { email, password } = req.body;
 
-        const employee = await Employee.findOne({ email }).lean();
+        const employee = await Employee.findOne({ email })
+            .populate([
+                { path: 'branch', select: 'name' },
+                { path: 'role', select: 'name' },
+            ])
+            .lean();
+
         if (!employee) {
             return responseOnly(res, 400, 'Email salah.');
         }
@@ -123,8 +129,16 @@ const authenticateEmploye = async (req, res) => {
 
         const payload = {
             id: employee._id,
-            roleID: employee.role,
-            branchID: employee.branch,
+            branch: {
+                id: employee.branch._id,
+                name: employee.branch.name,
+            },
+            // roleID: employee.role,
+            // branchID: employee.branch,
+            role: {
+                id: employee.role._id,
+                name: employee.role.name,
+            },
         };
 
         const token = generateToken(payload);

@@ -14,6 +14,7 @@ const reportSchema = new Schema(
                     enum: ['BERHASIL CAIR', 'GAGAL CAIR'],
                 },
                 revenue: Number,
+                desc: String,
             },
         ],
     },

@@ -5,17 +5,18 @@ const Admin = require('../controllers/adminController');
 const checkAuth = require('../middlewares/checkAuth');
 const checkRole = require('../middlewares/checkRole');
 
-router.get(
-    '/monit-pend-reg',
-    checkAuth,
-    checkRole('Admin'),
-    Admin.monitoringPendingRegistration
-);
+router.get('/monit-fap', checkAuth, checkRole('Admin'), Admin.monitorFAP);
 router.post(
     '/:id/admin-appr',
     checkAuth,
     checkRole('Admin'),
     Admin.adminApproval
+);
+router.patch(
+    '/:id/adm-respond-fap',
+    checkAuth,
+    checkRole('Admin'),
+    Admin.respondFAP
 );
 
 module.exports = router;

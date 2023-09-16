@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 const { responsePagination, responseOnly } = require('./httpResponse');
 
-const pagination = async (req, res, modelName, populate) => {
+const pagination = async (req, res, modelName, populate, filter) => {
     try {
         const Model = mongoose.connection.models[modelName];
 
@@ -10,10 +10,8 @@ const pagination = async (req, res, modelName, populate) => {
 
         let resp;
 
-        let filter = {};
-
         if (search_by && search_val) {
-            filter = { [search_by]: search_val };
+            filter = { ...filter, [search_by]: search_val };
         }
 
         let sort = {};

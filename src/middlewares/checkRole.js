@@ -3,11 +3,13 @@ const { responseOnly } = require('../utils/httpResponse');
 
 const checkRole = (roleName) => {
     return async (req, res, next) => {
-        const { roleID } = req.auth;
+        const { role } = req.auth;
 
-        const getRole = await Role.findById(roleID).select('name').lean();
+        if (role.name === 'Superadmin') {
+            return next();
+        }
 
-        if (getRole.name !== roleName) {
+        if (role.name !== roleName) {
             return responseOnly(res, 403, 'Access denied.');
         }
 

@@ -54,6 +54,10 @@ const responseAuth = (res, token) => {
     });
 };
 
+const responseAccessDenied = (res, customeMessage) => {
+    return responseOnly(res, 403, customeMessage ?? 'Access denied.');
+};
+
 module.exports = {
     responseOnly,
     responseData,
@@ -61,4 +65,5 @@ module.exports = {
     responseAPINotFound,
     responseValidationError,
     responseAuth,
+    responseAccessDenied,
 };

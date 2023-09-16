@@ -2,6 +2,7 @@
 const FAP = require('../models/FormAnalystPinjol');
 const { responseValidationError } = require('../utils/httpResponse');
 const crudService = require('../utils/crudService');
+const { validateRequest } = require('../utils/validator');
 
 const createFAP = async (req, res) => {
     const { body } = req;
@@ -128,19 +129,13 @@ const createFAP = async (req, res) => {
         );
     }
 
-    await validateRequest(
-        errorFields,
-        'branch',
-        body.branch,
-        'required;objectid'
-    );
-
     if (Object.keys(errorFields).length > 0) {
         return responseValidationError(res, errorFields);
     }
 
     const payload = {
         ...body,
+        user: req.auth.id,
     };
 
     return await crudService.save(res, FAP.modelName, payload);

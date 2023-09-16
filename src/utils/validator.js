@@ -13,14 +13,15 @@ const validateRequest = async (
         if (rule == 'required') {
             if (!requestValue || requestValue == '') {
                 errorFields[requestKey] =
-                    customMessage ?? toCapitalize(requestKey) + ' harus diisi.';
+                    customMessage ??
+                    formatReqestKey(requestKey) + ' harus diisi.';
                 return;
             }
         } else if (rule == 'numeric') {
             if (typeof requestValue !== 'number') {
                 errorFields[requestKey] =
                     customMessage ??
-                    toCapitalize(requestKey) +
+                    formatReqestKey(requestKey) +
                         ' harus berupa nilai numerik [0-9].';
                 return;
             }
@@ -29,7 +30,7 @@ const validateRequest = async (
             if (!emailRegex.test(requestValue)) {
                 errorFields[requestKey] =
                     customMessage ??
-                    toCapitalize(requestKey) +
+                    formatReqestKey(requestKey) +
                         ' harus berupa email yang valid, contoh: johndoe1234@gmail.com';
                 return;
             }
@@ -39,7 +40,7 @@ const validateRequest = async (
             if (!oneofNumArr.includes(requestValue)) {
                 errorFields[requestKey] =
                     customMessage ??
-                    toCapitalize(requestKey) +
+                    formatReqestKey(requestKey) +
                         ' harus salah satu dari nilai berikut: ' +
                         oneofNumArr.join(', ') +
                         '.';
@@ -51,7 +52,7 @@ const validateRequest = async (
                 if (requestValue > maxNum) {
                     errorFields[requestKey] =
                         'Nilai maksimum dari ' +
-                        toCapitalize(requestKey) +
+                        formatReqestKey(requestKey) +
                         ' adalah ' +
                         maxNum +
                         '.';
@@ -61,7 +62,7 @@ const validateRequest = async (
                 if (requestValue.length > maxNum) {
                     errorFields[requestKey] =
                         'Panjang maksimum dari ' +
-                        toCapitalize(requestKey) +
+                        formatReqestKey(requestKey) +
                         ' adalah ' +
                         maxNum +
                         '.';
@@ -74,7 +75,7 @@ const validateRequest = async (
                 if (requestValue < minNum) {
                     errorFields[requestKey] =
                         'Nilai minimum dari ' +
-                        toCapitalize(requestKey) +
+                        formatReqestKey(requestKey) +
                         ' adalah ' +
                         minNum +
                         '.';
@@ -84,7 +85,7 @@ const validateRequest = async (
                 if (requestValue.length < minNum) {
                     errorFields[requestKey] =
                         'Panjang minimum dari ' +
-                        toCapitalize(requestKey) +
+                        formatReqestKey(requestKey) +
                         ' adalah ' +
                         minNum +
                         '.';
@@ -103,7 +104,7 @@ const validateRequest = async (
                 if (find) {
                     errorFields[requestKey] =
                         customMessage ??
-                        toCapitalize(requestKey) + ' sudah ada.';
+                        formatReqestKey(requestKey) + ' sudah ada.';
                     return;
                 }
             } catch (error) {
@@ -122,7 +123,7 @@ const validateRequest = async (
             if (!Array.isArray(requestValue)) {
                 errorFields[requestKey] =
                     customMessage ??
-                    toCapitalize(requestKey) + ' harus berupa sebuah array.';
+                    formatReqestKey(requestKey) + ' harus berupa sebuah array.';
                 return;
             }
             if (rule.includes(':')) {
@@ -132,7 +133,7 @@ const validateRequest = async (
                         if (requestValue.length == 0) {
                             errorFields[requestKey] =
                                 customMessage ??
-                                toCapitalize(requestKey) +
+                                formatReqestKey(requestKey) +
                                     ' tidak boleh kosong.';
                             return;
                         }
@@ -144,7 +145,7 @@ const validateRequest = async (
             if (!regeex.test(requestValue)) {
                 errorFields[requestKey] =
                     customMessage ??
-                    toCapitalize(requestKey) +
+                    formatReqestKey(requestKey) +
                         ' harus mengandung setidaknya satu huruf kapital.';
                 return;
             }
@@ -153,7 +154,7 @@ const validateRequest = async (
             if (!regex.test(requestValue)) {
                 errorFields[requestKey] =
                     customMessage ??
-                    toCapitalize(requestKey) +
+                    formatReqestKey(requestKey) +
                         ' harus mengandung setidaknya satu angka.';
                 return;
             }
@@ -162,14 +163,14 @@ const validateRequest = async (
             if (!regex.test(requestValue)) {
                 errorFields[requestKey] =
                     customMessage ??
-                    toCapitalize(requestKey) +
+                    formatReqestKey(requestKey) +
                         ' harus mengandung setidaknya satu karakter simbol.';
                 return;
             }
         } else if (rule.includes('objectid')) {
             if (!mongoose.isValidObjectId(requestValue)) {
                 errorFields[requestKey] =
-                    toCapitalize(requestKey) +
+                    formatReqestKey(requestKey) +
                     ' bukan merupakan ID objek mongoose yang valid.';
                 return;
             }
@@ -180,9 +181,9 @@ const validateRequest = async (
                 let findone = await Model.findOne({ _id: requestValue }).lean();
                 if (!findone) {
                     errorFields[requestKey] =
-                        toCapitalize(requestKey) +
+                        formatReqestKey(requestKey) +
                         ' tidak ditemukan pada model ' +
-                        toCapitalize(modelName);
+                        formatReqestKey(modelName);
                 }
             }
         }
@@ -224,7 +225,7 @@ const validateDateFromNow = (
             if (pDate <= currDate) {
                 errorFields[requestKey] =
                     customMessage ??
-                    toCapitalize(requestKey) +
+                    formatReqestKey(requestKey) +
                         ' should be greater than current date.';
                 return;
             }
@@ -233,7 +234,7 @@ const validateDateFromNow = (
             if (pDate >= currDate) {
                 errorFields[requestKey] =
                     customMessage ??
-                    toCapitalize(requestKey) +
+                    formatReqestKey(requestKey) +
                         ' should be lower than current date.';
                 return;
             }
@@ -242,7 +243,7 @@ const validateDateFromNow = (
             if (pDate !== currDate) {
                 errorFields[requestKey] =
                     customMessage ??
-                    toCapitalize(requestKey) +
+                    formatReqestKey(requestKey) +
                         ' should be equal with current date.';
                 return;
             }
@@ -251,8 +252,8 @@ const validateDateFromNow = (
     }
 };
 
-const toCapitalize = (str) => {
-    return str.charAt(0).toUpperCase() + str.slice(1);
+const formatReqestKey = (str) => {
+    return 'Field ' + str.charAt(0).toUpperCase() + str.slice(1);
 };
 
 module.exports = {

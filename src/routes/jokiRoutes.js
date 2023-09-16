@@ -4,7 +4,7 @@ const checkAuth = require('../middlewares/checkAuth');
 const checkRole = require('../middlewares/checkRole');
 
 router.get(
-    '/joki-monit-work',
+    '/joki-monit-work-fap',
     checkAuth,
     checkRole('Joki'),
     Joki.jokiMonitoringWork

@@ -1,20 +1,40 @@
 const Employee = require('../models/Employee');
 const User = require('../models/User');
-const compareObjectId = require('../utils/compareObjectId');
+const FAP = require('../models/FormAnalystPinjol');
 const crudService = require('../utils/crudService');
-const { responseOnly } = require('../utils/httpResponse');
+const {
+    responseOnly,
+    responseAccessDenied,
+    responseValidationError,
+} = require('../utils/httpResponse');
+const Branch = require('../models/Branch');
+const { validateRequest } = require('../utils/validator');
 
-const monitoringPendingRegistration = async (req, res) => {
-    const { branchID } = req.auth;
+const monitorFAP = async (req, res) => {
+    const { branch } = req.auth;
 
-    const filter = {
-        branch: branchID,
-        status: 'MENUNGGU VALIDASI',
-    };
+    /* Jika tidak memiliki branch */
+    if (!branch) {
+        return responseAccessDenied(res);
+    }
 
-    const populate = ['branch'];
+    let filter;
+    let populate = [
+        { path: 'joki', select: 'name' },
+        { path: 'validatedBy', select: 'name' },
+        { path: 'user', select: 'name age nik location phoneNumber' },
+        { path: 'branch', select: 'name' },
+    ];
 
-    return await crudService.get(req, res, User.modelName, populate, filter);
+    if (branch.name !== 'Mampang') {
+        filter = { branch: branch.id };
+    } else {
+        filter = { branch: { $in: [branch.id, null] } };
+    }
+
+    console.log(filter);
+
+    return await crudService.get(req, res, FAP.modelName, populate, filter);
 };
 
 const adminApproval = async (req, res) => {
@@ -88,9 +108,75 @@ const adminApproval = async (req, res) => {
     return await crudService.update(res, User.modelName, payload, userID);
 };
 
-const monitoringUserReport = async (req, res) => {};
+const respondFAP = async (req, res) => {
+    const { action, destBranch, status, joki } = req.body;
+    const { id: FAP_ID } = req.params;
+    const { branch } = req.auth;
+
+    let error_field = {};
+
+    await validateRequest(
+        error_field,
+        'action',
+        action,
+        'required;oneof=DELEGATE:APPROVAL'
+    );
+
+    if (action === 'DELEGATE') {
+        await validateRequest(
+            error_field,
+            'destBranch',
+            destBranch,
+            `required;objectid:${Branch.modelName}`,
+            'Field Tujuan cabang harus diisi.'
+        );
+    } else if (action === 'APPROVAL') {
+        await validateRequest(
+            error_field,
+            'joki',
+            joki,
+            `required;objectid:${Employee.modelName}`
+        );
+        await validateRequest(
+            error_field,
+            'status',
+            status,
+            'required;oneof=DISETUJUI:DITOLAK'
+        );
+    }
+
+    if (Object.keys(error_field).length > 0) {
+        return responseValidationError(res, error_field);
+    }
+
+    switch (action) {
+        case 'DELEGATE':
+            if (branch.name !== 'Mampang') {
+                return responseAccessDenied(res);
+            }
+
+            const payloadDelegate = { branch: destBranch };
+            return await crudService.update(
+                res,
+                FAP.modelName,
+                payloadDelegate,
+                FAP_ID
+            );
+        case 'APPROVAL':
+            const payloadApproval = { status, joki };
+            return await crudService.update(
+                res,
+                FAP.modelName,
+                payloadApproval,
+                FAP_ID
+            );
+        default:
+            return responseOnly(res, 400, 'Action is invalid.');
+    }
+};
 
 module.exports = {
-    monitoringPendingRegistration,
+    monitorFAP,
     adminApproval,
+    respondFAP,
 };

@@ -41,6 +41,7 @@ const schema = new Schema(
         branch: {
             type: Schema.Types.ObjectId,
             ref: 'Branch',
+            default: null,
         },
         joki: {
             type: Schema.Types.ObjectId,

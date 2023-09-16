@@ -1,20 +1,31 @@
 const Report = require('../models/Report');
 const User = require('../models/User');
+const FAP = require('../models/FormAnalystPinjol');
 const crudService = require('../utils/crudService');
 const { responseOnly } = require('../utils/httpResponse');
 const { validateRequest } = require('../utils/validator');
 
 const jokiMonitoringWork = async (req, res) => {
-    const { branchID } = req.auth;
+    const { branch, id: jokiID } = req.auth;
 
     const filter = {
-        branch: branchID,
+        branch: branch.id,
         status: 'DISETUJUI',
+        joki: jokiID,
     };
 
-    const populate = ['branch', 'role'];
+    const populate = [
+        { path: 'branch', select: 'name' },
+        { path: 'joki', select: 'name' },
+        { path: 'validatedBy', select: 'name' },
+    ];
 
-    return await crudService.get(req, res, User.modelName, populate, filter);
+    return await crudService.get(req, res, FAP.modelName, populate, filter);
+};
+
+const processFAP = async (req, res) => {
+    const payload = { status: 'DALAM PENGGARAPAN' };
+    return await crudService.update(res, FAP.modelName, payload, req.params.id);
 };
 
 const jokiApproval = async (req, res) => {
@@ -40,65 +51,44 @@ const jokiApproval = async (req, res) => {
 };
 
 const sendReport = async (req, res) => {
-    const { progressApps } = req.body;
-    const { id: userID } = req.params;
+    const { status, appName, appDesc } = req.body;
+    const { id: FAP_ID } = req.params;
 
-    let error_fields = {};
-
-    await validateRequest(error_fields, 'userID', userID, 'required;objectid');
+    let error_field = {};
 
     await validateRequest(
-        error_fields,
-        'progressApps',
-        progressApps,
-        'required;array;notempty'
+        error_field,
+        'fap_id',
+        FAP_ID,
+        `required;objectid:${FAP}`
     );
 
-    let num = 0;
-    let idx = 0;
+    await validateRequest(
+        error_field,
+        'status',
+        status,
+        'required;oneof=PENGGARAPAN BERHASIL:PENGGARAPAN GAGAL'
+    );
 
-    if (Array.isArray(progressApps) && progressApps.length > 0) {
-        num = 1;
-        for (let pApps of progressApps) {
-            await validateRequest(
-                error_fields,
-                'progressApps.name' + idx,
-                pApps.name,
-                'required',
-                'Nama aplikasi wajib diisi.'
-            );
+    if (status === 'PENGGARAPAN BERHASIL' || status === 'PENGGARAPAN GAGAL') {
+        await validateRequest(
+            error_field,
+            'appName',
+            appName,
+            'required',
+            'Field Nama aplikasi yang digarap harus diisi.'
+        );
 
-            await validateRequest(
-                error_fields,
-                'progressApps.status' + idx,
-                pApps.status,
-                'required;oneof=BERHASIL CAIR:GAGAL CAIR',
-                'Status aplikasi wajib diisi.'
-            );
-
-            await validateRequest(
-                error_fields,
-                'progressApps.revenue',
-                pApps.revenue,
-                'required;numeric;min=0'
-            );
-
-            num++;
-            idx++;
-        }
+        await validateRequest(
+            error_field,
+            'appDesc',
+            appDesc,
+            'required',
+            'Field Deskripsi penggarapan aplikasi harus diisi.'
+        );
     }
 
-    const finduser = await User.findById(userID).lean();
-    if (!finduser) {
-        return responseOnly(res, 400, 'User not found.');
-    }
-
-    const payload = {
-        userID,
-        progressApps,
-    };
-
-    return await crudService.save(res, Report.modelName, payload);
+    return await crudService.save();
 };
 
 module.exports = {
