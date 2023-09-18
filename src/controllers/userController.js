@@ -37,20 +37,25 @@ const createUser = async (req, res) => {
         body.password,
         body.passwordConfirmation
     );
-    await validateRequest(errorFields, 'name', body.name, 'required');
+    await validateRequest(errorFields, 'Nama', body.name, 'required');
     await validateRequest(
         errorFields,
         'nik',
         body.nik,
         'required;min=16;max=16'
     );
-    await validateRequest(errorFields, 'age', body.age, 'required');
-    await validateRequest(errorFields, 'pob', body.pob, 'required');
-    await validateRequest(errorFields, 'dob', body.dob, 'required');
-    await validateRequest(errorFields, 'location', body.location, 'required');
+    await validateRequest(errorFields, 'Usia', body.age, 'required');
+    await validateRequest(errorFields, 'Tempat lahir', body.pob, 'required');
+    await validateRequest(errorFields, 'Tanggal lahir', body.dob, 'required');
     await validateRequest(
         errorFields,
-        'phoneNumber',
+        'Alamat rumah saat ini',
+        body.location,
+        'required'
+    );
+    await validateRequest(
+        errorFields,
+        'Nomor Hp pengajuan',
         body.phoneNumber,
         'required'
     );
