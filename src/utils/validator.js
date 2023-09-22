@@ -5,7 +5,8 @@ const validateRequest = async (
     requestKey,
     requestValue,
     rules,
-    customMessage
+    customMessage,
+    customRequestKey
 ) => {
     let ruleArr = rules.split(';');
 
@@ -14,14 +15,15 @@ const validateRequest = async (
             if (!requestValue || requestValue == '') {
                 errorFields[requestKey] =
                     customMessage ??
-                    formatReqestKey(requestKey) + ' harus diisi.';
+                    formatReqestKey(customRequestKey ?? requestKey) +
+                        ' harus diisi.';
                 return;
             }
         } else if (rule == 'numeric') {
             if (typeof requestValue !== 'number') {
                 errorFields[requestKey] =
                     customMessage ??
-                    formatReqestKey(requestKey) +
+                    formatReqestKey(customRequestKey ?? requestKey) +
                         ' harus berupa nilai numerik [0-9].';
                 return;
             }
@@ -30,7 +32,7 @@ const validateRequest = async (
             if (!emailRegex.test(requestValue)) {
                 errorFields[requestKey] =
                     customMessage ??
-                    formatReqestKey(requestKey) +
+                    formatReqestKey(customRequestKey ?? requestKey) +
                         ' harus berupa email yang valid, contoh: johndoe1234@gmail.com';
                 return;
             }
@@ -40,7 +42,7 @@ const validateRequest = async (
             if (!oneofNumArr.includes(requestValue)) {
                 errorFields[requestKey] =
                     customMessage ??
-                    formatReqestKey(requestKey) +
+                    formatReqestKey(customRequestKey ?? requestKey) +
                         ' harus salah satu dari nilai berikut: ' +
                         oneofNumArr.join(', ') +
                         '.';
@@ -52,7 +54,7 @@ const validateRequest = async (
                 if (requestValue > maxNum) {
                     errorFields[requestKey] =
                         'Nilai maksimum dari ' +
-                        formatReqestKey(requestKey) +
+                        formatReqestKey(customRequestKey ?? requestKey) +
                         ' adalah ' +
                         maxNum +
                         '.';
@@ -62,7 +64,7 @@ const validateRequest = async (
                 if (requestValue.length > maxNum) {
                     errorFields[requestKey] =
                         'Panjang maksimum dari ' +
-                        formatReqestKey(requestKey) +
+                        formatReqestKey(customRequestKey ?? requestKey) +
                         ' adalah ' +
                         maxNum +
                         '.';
@@ -75,7 +77,7 @@ const validateRequest = async (
                 if (requestValue < minNum) {
                     errorFields[requestKey] =
                         'Nilai minimum dari ' +
-                        formatReqestKey(requestKey) +
+                        formatReqestKey(customRequestKey ?? requestKey) +
                         ' adalah ' +
                         minNum +
                         '.';
@@ -85,7 +87,7 @@ const validateRequest = async (
                 if (requestValue.length < minNum) {
                     errorFields[requestKey] =
                         'Panjang minimum dari ' +
-                        formatReqestKey(requestKey) +
+                        formatReqestKey(customRequestKey ?? requestKey) +
                         ' adalah ' +
                         minNum +
                         '.';
@@ -104,26 +106,40 @@ const validateRequest = async (
                 if (find) {
                     errorFields[requestKey] =
                         customMessage ??
-                        formatReqestKey(requestKey) + ' sudah ada.';
+                        formatReqestKey(customRequestKey ?? requestKey) +
+                            ' sudah ada.';
                     return;
                 }
             } catch (error) {
                 throw new Error(error);
             }
-        } else if (rule.includes('fromnow')) {
-            let flag = rule.split(':');
-            validateDateFromNow(
-                errorFields,
-                requestKey,
-                requestValue,
-                flag,
-                customMessage
-            );
+        } else if (rule.includes('date')) {
+            let parsedDate = Date.parse(requestValue);
+            if (isNaN(parsedDate)) {
+                errorFields[requestKey] =
+                    customMessage ??
+                    formatReqestKey(customRequestKey ?? requestKey) +
+                        ' harus berupa tanggal yang valid.';
+                return;
+            }
+
+            if (rule.includes(':')) {
+                let flag = rule.split(':')[1];
+                validateDateFromNow(
+                    errorFields,
+                    requestKey,
+                    requestValue,
+                    flag,
+                    customMessage,
+                    customRequestKey
+                );
+            }
         } else if (rule.includes('array')) {
             if (!Array.isArray(requestValue)) {
                 errorFields[requestKey] =
                     customMessage ??
-                    formatReqestKey(requestKey) + ' harus berupa sebuah array.';
+                    formatReqestKey(customRequestKey ?? requestKey) +
+                        ' harus berupa sebuah array.';
                 return;
             }
             if (rule.includes(':')) {
@@ -133,8 +149,9 @@ const validateRequest = async (
                         if (requestValue.length == 0) {
                             errorFields[requestKey] =
                                 customMessage ??
-                                formatReqestKey(requestKey) +
-                                    ' tidak boleh kosong.';
+                                formatReqestKey(
+                                    customRequestKey ?? requestKey
+                                ) + ' tidak boleh kosong.';
                             return;
                         }
                     }
@@ -145,7 +162,7 @@ const validateRequest = async (
             if (!regeex.test(requestValue)) {
                 errorFields[requestKey] =
                     customMessage ??
-                    formatReqestKey(requestKey) +
+                    formatReqestKey(customRequestKey ?? requestKey) +
                         ' harus mengandung setidaknya satu huruf kapital.';
                 return;
             }
@@ -154,7 +171,7 @@ const validateRequest = async (
             if (!regex.test(requestValue)) {
                 errorFields[requestKey] =
                     customMessage ??
-                    formatReqestKey(requestKey) +
+                    formatReqestKey(customRequestKey ?? requestKey) +
                         ' harus mengandung setidaknya satu angka.';
                 return;
             }
@@ -163,14 +180,14 @@ const validateRequest = async (
             if (!regex.test(requestValue)) {
                 errorFields[requestKey] =
                     customMessage ??
-                    formatReqestKey(requestKey) +
+                    formatReqestKey(customRequestKey ?? requestKey) +
                         ' harus mengandung setidaknya satu karakter simbol.';
                 return;
             }
         } else if (rule.includes('objectid')) {
             if (!mongoose.isValidObjectId(requestValue)) {
                 errorFields[requestKey] =
-                    formatReqestKey(requestKey) +
+                    formatReqestKey(customRequestKey ?? requestKey) +
                     ' bukan merupakan ID objek mongoose yang valid.';
                 return;
             }
@@ -181,7 +198,7 @@ const validateRequest = async (
                 let findone = await Model.findOne({ _id: requestValue }).lean();
                 if (!findone) {
                     errorFields[requestKey] =
-                        formatReqestKey(requestKey) +
+                        formatReqestKey(customRequestKey ?? requestKey) +
                         ' tidak ditemukan pada model ' +
                         formatReqestKey(modelName);
                 }
@@ -214,49 +231,81 @@ const validateDateFromNow = (
     requestKey,
     requestValue,
     flag,
-    customMessage
+    customMessage,
+    customRequestKey
 ) => {
-    const pDate = new Date(requestValue);
-    const currDate = new Date();
+    const today = new Date();
 
-    switch (flag) {
-        case 'after':
-            /* pDate should be after currDate */
-            if (pDate <= currDate) {
-                errorFields[requestKey] =
-                    customMessage ??
-                    formatReqestKey(requestKey) +
-                        ' should be greater than current date.';
-                return;
-            }
-        case 'before':
-            /* pDate should be before currDate */
-            if (pDate >= currDate) {
-                errorFields[requestKey] =
-                    customMessage ??
-                    formatReqestKey(requestKey) +
-                        ' should be lower than current date.';
-                return;
-            }
-        case 'equal':
-            /* pDate should be equal to currDate */
-            if (pDate !== currDate) {
-                errorFields[requestKey] =
-                    customMessage ??
-                    formatReqestKey(requestKey) +
-                        ' should be equal with current date.';
-                return;
-            }
-        default:
-            break;
+    today.setHours(0, 0, 0, 0);
+
+    requestValue = new Date(requestValue);
+
+    if (flag === 'after') {
+        if (requestValue.getTime() <= today.getTime()) {
+            errorFields[requestKey] =
+                customMessage ??
+                formatReqestKey(customRequestKey ?? requestKey) +
+                    ' harus melewati dari tanggal hari ini.';
+            return;
+        }
+    } else if (flag === 'before') {
+        if (requestValue.getTime() >= today.getTime()) {
+            errorFields[requestKey] =
+                customMessage ??
+                formatReqestKey(customRequestKey ?? requestKey) +
+                    ' harus sebelum dari tanggal hari ini';
+            return;
+        }
+    } else if (flag.startsWith('after_')) {
+        let diffDayVal = parseInt(flag.split('_')[1]);
+        /* Count different in millisecond */
+        const diffInMs = requestValue.getTime() - today.getTime();
+        /* Count different in days */
+        const diffInDays = diffInMs / (1000 * 60 * 60 * 24);
+
+        if (diffInDays < diffDayVal) {
+            errorFields[requestKey] =
+                customMessage ??
+                formatReqestKey(customRequestKey ?? requestKey) +
+                    ' harus setidaknya lebih dari ' +
+                    diffDayVal +
+                    ' hari dari hari ini.';
+            return;
+        }
+    } else if (flag.startsWith('before_')) {
+        let diffDayVal = parseInt(flag.split('_')[1]);
+        /* Count different in millisecond */
+        const diffInMs = requestValue.getTime() - today.getTime();
+        /* Count different in days */
+        const diffInDays = diffInMs / (1000 * 60 * 60 * 24);
+
+        if (diffInDays > diffDayVal) {
+            errorFields[requestKey] =
+                customMessage ??
+                formatReqestKey(customRequestKey ?? requestKey) +
+                    ' harus setidaknya kurang dari ' +
+                    diffDayVal +
+                    ' hari dari hari ini.';
+            return;
+        }
     }
+};
+
+const setErrorField = (errorFields, requestKey, message) => {
+    errorFields[requestKey] = message;
 };
 
 const formatReqestKey = (str) => {
     return 'Field ' + str.charAt(0).toUpperCase() + str.slice(1);
 };
 
+const validationFailed = (errorFields) => {
+    return Object.keys(errorFields).length > 0;
+};
+
 module.exports = {
     validateRequest,
     validatePasswordConfirmation,
+    validationFailed,
+    setErrorField,
 };

@@ -1,4 +1,5 @@
 const User = require('../models/User');
+const Employee = require('../models/Employee');
 const {
     validateRequest,
     validatePasswordConfirmation,
@@ -25,6 +26,12 @@ const createUser = async (req, res) => {
         'email',
         body.email,
         `required;email;unique:${Model}:email`
+    );
+    await validateRequest(
+        errorFields,
+        'email',
+        body.email,
+        `required;email;unique:${Employee.modelName}:email`
     );
     await validateRequest(
         errorFields,

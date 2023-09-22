@@ -32,8 +32,6 @@ const monitorFAP = async (req, res) => {
         filter = { branch: { $in: [branch.id, null] } };
     }
 
-    console.log(filter);
-
     return await crudService.get(req, res, FAP.modelName, populate, filter);
 };
 
@@ -80,8 +78,6 @@ const adminApproval = async (req, res) => {
                 .select('role branch')
                 .populate('role branch')
                 .lean();
-
-            console.log(checkJoki);
         } catch (error) {
             console.log(error);
             return responseOnly(res, 500);

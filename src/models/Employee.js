@@ -17,6 +17,11 @@ const schema = new Schema(
             type: Schema.Types.ObjectId,
             ref: 'Branch',
         },
+        status: {
+            type: String,
+            enum: ['AKTIF', 'CUTI'],
+            default: 'AKTIF',
+        },
     },
     { timestamps: true }
 );

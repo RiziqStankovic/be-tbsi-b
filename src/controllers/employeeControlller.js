@@ -1,7 +1,10 @@
 const Employee = require('../models/Employee');
+const User = require('../models/User');
 const {
     validateRequest,
     validatePasswordConfirmation,
+    validationFailed,
+    setErrorField,
 } = require('../utils/validator');
 const crudService = require('../utils/crudService');
 const { hashPassword, comparePassword } = require('../utils/bcrypt');
@@ -15,6 +18,8 @@ const path = require('path');
 const { uploadImage } = require('../utils/cloudinary');
 const { generateToken } = require('../utils/jwt');
 const { EMP_FLD_NAME, DFLT_FINDBY_VAL } = require('../utils/constants');
+const LeaveReq = require('../models/EmployeeLeaveRequest');
+const dateUtil = require('../utils/dateUtil');
 
 const ModelEmployee = Employee.modelName;
 
@@ -32,6 +37,12 @@ const createEmployee = async (req, res) => {
         'email',
         body.email,
         `required;email;unique:${ModelEmployee}:email`
+    );
+    await validateRequest(
+        error_field,
+        'email',
+        body.email,
+        `required;email;unique:${User.modelName}:email`
     );
     await validateRequest(
         error_field,
@@ -150,6 +161,83 @@ const authenticateEmploye = async (req, res) => {
     }
 };
 
+const createLeaveReq = async (req, res) => {
+    const { body } = req;
+
+    let error_field = {};
+
+    try {
+        const findonepending = await LeaveReq.findOne({
+            status: 'MENUNGGU PERSETUJUAN',
+        }).lean();
+        if (findonepending) {
+            setErrorField(
+                error_field,
+                'alreadyExist',
+                'Anda telah mengajukan cuti pada tanggal ' +
+                    dateUtil.toLocal(findonepending.dateFrom) +
+                    ' dan belum di setujui oleh Superadmin'
+            );
+        } else {
+            const findonerunning = await LeaveReq.findOne({
+                dateTo: { $gt: Date.now() },
+                status: 'DISETUJUI',
+            }).lean();
+            if (findonerunning) {
+                setErrorField(
+                    error_field,
+                    'alreadyExist',
+                    'Anda masih memiliki waktu cuti sampai ' +
+                        dateUtil.toLocal(findonerunning.dateTo)
+                );
+            }
+        }
+    } catch (error) {
+        console.log(error);
+        return responseOnly(res, 500);
+    }
+
+    await validateRequest(
+        error_field,
+        'dateFrom',
+        body.dateFrom,
+        'required;date:after_1',
+        null,
+        'tanggal mulai'
+    );
+    await validateRequest(
+        error_field,
+        'dateTo',
+        body.dateTo,
+        'required;date',
+        null,
+        'tanggal akhir'
+    );
+    await validateRequest(
+        error_field,
+        'desc',
+        body.desc,
+        'required',
+        null,
+        'Deskripsi'
+    );
+
+    await validateRequest(
+        error_field,
+        'employee',
+        body.employee,
+        `required;objectid:${Employee.modelName}`,
+        null,
+        'ID Karyawan'
+    );
+
+    if (validationFailed(error_field)) {
+        return responseValidationError(res, error_field);
+    }
+
+    return await crudService.save(res, LeaveReq.modelName, body);
+};
+
 module.exports = {
     createEmployee,
     getEmployees,
@@ -157,4 +245,5 @@ module.exports = {
     removeEmployee,
     updateEmployee,
     authenticateEmploye,
+    createLeaveReq,
 };

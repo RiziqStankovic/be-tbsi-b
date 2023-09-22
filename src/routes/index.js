@@ -8,6 +8,8 @@ const Role = require('./roleRoutes');
 const Admin = require('./adminRoutes');
 const Joki = require('./jokiRoutes');
 const FAP = require('./fapRoutes');
+const Superadmin = require('./superadminRoutes');
+const Auth = require('./authRoutes');
 
 /* Use routes */
 
@@ -31,5 +33,11 @@ router.use('/joki', Joki);
 
 /* Router form analyst pinjol */
 router.use('/fap', FAP);
+
+/* Router khusus untuk Superadmin */
+router.use('/superadmin', Superadmin);
+
+/* Routes untuk login employee, dan user */
+router.use('/auth', Auth);
 
 module.exports = router;

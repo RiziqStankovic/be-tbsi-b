@@ -23,8 +23,6 @@ const checkAuth = (req, res, next) => {
 
     req.auth = { ...decoded };
 
-    console.log(req.auth);
-
     return next();
 };
 
