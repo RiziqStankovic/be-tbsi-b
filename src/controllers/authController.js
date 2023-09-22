@@ -39,7 +39,10 @@ const authenticateCredentials = async (req, res) => {
                 if (!comparePassword(password, findEmailUsr.password)) {
                     setErrorField(error_fields, 'password', 'Password salah.');
                 } else {
-                    const payloadUsr = { id: findEmailUsr._id };
+                    const payloadUsr = {
+                        id: findEmailUsr._id,
+                        role: { name: 'User' },
+                    };
                     token = generateToken(payloadUsr);
                     return responseAuth(res, token);
                 }
