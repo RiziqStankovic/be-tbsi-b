@@ -9,9 +9,12 @@ const {
 } = require('../utils/httpResponse');
 const Branch = require('../models/Branch');
 const { validateRequest } = require('../utils/validator');
+const { DFLT_FINDBY_VAL } = require('../utils/constants');
 
 const monitorFAP = async (req, res) => {
     const { branch } = req.auth;
+
+    let resp;
 
     /* Jika tidak memiliki branch */
     if (!branch) {
@@ -19,22 +22,50 @@ const monitorFAP = async (req, res) => {
     }
 
     let filter;
-    let populate = [
-        { path: 'joki', select: 'name' },
-        { path: 'validatedBy', select: 'name' },
-        { path: 'user', select: 'name age nik location phoneNumber' },
-        { path: 'branch', select: 'name' },
-    ];
+    let countFilter = null;
+    let populate = [{ path: 'user', select: 'name' }];
+
+    let select = 'status createdAt';
 
     if (branch.name !== 'Mampang') {
         filter = { branch: branch.id };
+        countFilter = { ...filter };
     } else {
         filter = { branch: { $in: [branch.id, null] } };
     }
 
-    return await crudService.get(req, res, FAP.modelName, populate, filter);
+    return await crudService.get(
+        req,
+        res,
+        FAP.modelName,
+        populate,
+        filter,
+        select,
+        countFilter
+    );
 };
 
+const detailFAP = async (req, res) => {
+    const populate = [
+        { path: 'user', select: 'nik name age location phoneNumber' },
+    ];
+
+    const select =
+        'phoneBrand phoneRam recommendation maintainedApps paymentFailedApps rejectedApps status';
+
+    return await crudService.show(
+        res,
+        FAP.modelName,
+        DFLT_FINDBY_VAL,
+        req.params.id,
+        populate,
+        select
+    );
+};
+
+/* 
+! DEPRECATED
+*/
 const adminApproval = async (req, res) => {
     const { status, joki } = req.body;
     const { id: userID } = req.params;
@@ -105,9 +136,9 @@ const adminApproval = async (req, res) => {
 };
 
 const respondFAP = async (req, res) => {
-    const { action, destBranch, status, joki } = req.body;
+    const { action, destBranch, status, joki, reportStatus } = req.body;
     const { id: FAP_ID } = req.params;
-    const { branch } = req.auth;
+    const { branch, id: adminID } = req.auth;
 
     let error_field = {};
 
@@ -124,7 +155,8 @@ const respondFAP = async (req, res) => {
             'destBranch',
             destBranch,
             `required;objectid:${Branch.modelName}`,
-            'Field Tujuan cabang harus diisi.'
+            null,
+            'Cabang'
         );
     } else if (action === 'APPROVAL') {
         await validateRequest(
@@ -159,7 +191,12 @@ const respondFAP = async (req, res) => {
                 FAP_ID
             );
         case 'APPROVAL':
-            const payloadApproval = { status, joki };
+            const payloadApproval = {
+                status,
+                joki,
+                branch: branch.id,
+                validatedBy: adminID,
+            };
             return await crudService.update(
                 res,
                 FAP.modelName,
@@ -175,4 +212,5 @@ module.exports = {
     monitorFAP,
     adminApproval,
     respondFAP,
+    detailFAP,
 };

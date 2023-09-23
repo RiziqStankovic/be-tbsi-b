@@ -22,6 +22,7 @@ const schema = new Schema(
             enum: ['AKTIF', 'CUTI'],
             default: 'AKTIF',
         },
+        loginAt: Date,
     },
     { timestamps: true }
 );

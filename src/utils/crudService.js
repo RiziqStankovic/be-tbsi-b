@@ -15,16 +15,32 @@ const save = async (res, modelName, data) => {
     }
 };
 
-const get = async (req, res, modelName, populate, filter) => {
+const get = async (
+    req,
+    res,
+    modelName,
+    populate,
+    filter,
+    select,
+    countFilter
+) => {
     if (req.query.use_paginate) {
-        return await pagination(req, res, modelName, populate, filter);
+        return await pagination(
+            req,
+            res,
+            modelName,
+            populate,
+            filter,
+            select,
+            countFilter
+        );
     }
 
     try {
         const Model = mongoose.connection.models[modelName];
 
         const getall = await Model.find(filter ?? {})
-            .select('-password')
+            .select(select ?? '-password')
             .populate(populate ?? '')
             .lean();
 
@@ -40,13 +56,21 @@ const get = async (req, res, modelName, populate, filter) => {
     }
 };
 
-const show = async (res, modelName, findbyField, findbyValue, populate) => {
+const show = async (
+    res,
+    modelName,
+    findbyField,
+    findbyValue,
+    populate,
+    select
+) => {
     try {
         const Model = mongoose.connection.models[modelName];
 
         const getone = await Model.findOne({
             [findbyField]: findbyValue,
         })
+            .select(select ?? '-password')
             .populate(populate ?? '')
             .lean();
 

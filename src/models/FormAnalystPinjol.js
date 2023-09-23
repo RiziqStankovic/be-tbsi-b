@@ -33,8 +33,7 @@ const schema = new Schema(
                 'DITOLAK',
                 'MENUNGGU VALIDASI',
                 'DALAM PENGGARAPAN',
-                'PENGGARAPAN BERHASIL',
-                'PENGGARAPAN GAGAL',
+                'PENGGARAPAN SELESAI',
             ],
             default: 'MENUNGGU VALIDASI',
         },
@@ -52,6 +51,16 @@ const schema = new Schema(
             type: Schema.Types.ObjectId,
             ref: 'Employee',
             default: null,
+        },
+        reportStatus: {
+            firstReport: {
+                type: Boolean,
+                default: false,
+            },
+            secondReport: {
+                type: Boolean,
+                default: false,
+            },
         },
     },
     { timestamps: true }

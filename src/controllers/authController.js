@@ -62,6 +62,8 @@ const authenticateCredentials = async (req, res) => {
                         name: findEmailEmp.role.name,
                     },
                 };
+                findEmailEmp.loginAt = new Date();
+                await Employee.updateOne(findEmailEmp);
                 token = generateToken(payloadEmp);
                 return responseAuth(res, token);
             }

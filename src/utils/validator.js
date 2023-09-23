@@ -203,6 +203,13 @@ const validateRequest = async (
                         formatReqestKey(modelName);
                 }
             }
+        } else if (rule === 'boolean') {
+            if (typeof requestValue !== 'boolean') {
+                errorFields[requestKey] =
+                    customMessage ??
+                    formatReqestKey(customRequestKey ?? requestKey) +
+                        ' harus berupa boolean.';
+            }
         }
     }
 };

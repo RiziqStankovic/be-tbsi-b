@@ -1,7 +1,15 @@
 const mongoose = require('mongoose');
 const { responsePagination, responseOnly } = require('./httpResponse');
 
-const pagination = async (req, res, modelName, populate, filter) => {
+const pagination = async (
+    req,
+    res,
+    modelName,
+    populate,
+    filter,
+    select,
+    countFilter
+) => {
     try {
         const Model = mongoose.connection.models[modelName];
 
@@ -33,10 +41,11 @@ const pagination = async (req, res, modelName, populate, filter) => {
             .sort(sort)
             .skip(skip)
             .limit(limit)
+            .select(select ?? '-password')
             .populate(populate ?? '')
             .lean();
 
-        const totalData = await Model.countDocuments();
+        const totalData = await Model.countDocuments(countFilter ?? {});
         const totalPages = Math.ceil(totalData / limit);
 
         const paginateInfo = {
