@@ -23,7 +23,12 @@ const authenticateCredentials = async (req, res) => {
     await validateRequest(error_fields, 'password', password, 'required');
 
     try {
-        const findEmailEmp = await Employee.findOne({ email }).lean();
+        const findEmailEmp = await Employee.findOne({ email })
+            .populate([
+                { path: 'branch', select: 'name' },
+                { path: 'role', select: 'name' },
+            ])
+            .lean();
 
         if (!findEmailEmp) {
             const findEmailUsr = await User.findOne({ email }).lean();
@@ -57,9 +62,11 @@ const authenticateCredentials = async (req, res) => {
                         name: findEmailEmp.role.name,
                     },
                 };
+
                 // findEmailEmp.loginAt = new Date();
                 // await Employee.updateOne(findEmailEmp);
                 token = generateToken(payloadEmp);
+                console.log(token);
                 return responseAuth(res, token);
             }
         }

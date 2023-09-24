@@ -208,9 +208,27 @@ const respondFAP = async (req, res) => {
     }
 };
 
+const getAdminInfo = async (req, res) => {
+    const select = 'name photo.url status email';
+    const populate = [
+        { path: 'role', select: 'name' },
+        { path: 'branch', select: 'name' },
+    ];
+
+    return await crudService.show(
+        res,
+        Employee.modelName,
+        DFLT_FINDBY_VAL,
+        req.auth.id,
+        populate,
+        select
+    );
+};
+
 module.exports = {
     monitorFAP,
     adminApproval,
     respondFAP,
     detailFAP,
+    getAdminInfo,
 };

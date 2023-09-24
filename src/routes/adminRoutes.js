@@ -20,5 +20,6 @@ router.patch(
     Admin.respondFAP
 );
 router.get('/:id/det-fap', checkAuth, checkRole('Admin'), Admin.detailFAP);
+router.get('/adm-info', checkAuth, checkRole('Admin'), Admin.getAdminInfo);
 
 module.exports = router;
