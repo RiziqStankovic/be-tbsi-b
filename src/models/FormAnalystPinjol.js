@@ -54,12 +54,12 @@ const schema = new Schema(
         },
         reportStatus: {
             firstReport: {
-                type: Boolean,
-                default: false,
+                type: String,
+                default: '0',
             },
             secondReport: {
-                type: Boolean,
-                default: false,
+                type: String,
+                default: '0',
             },
         },
     },

@@ -9,7 +9,11 @@ const {
     responseData,
 } = require('../utils/httpResponse');
 const Branch = require('../models/Branch');
-const { validateRequest } = require('../utils/validator');
+const {
+    validateRequest,
+    validationFailed,
+    setErrorField,
+} = require('../utils/validator');
 const { DFLT_FINDBY_VAL } = require('../utils/constants');
 const Role = require('../models/Role');
 
@@ -138,8 +142,7 @@ const adminApproval = async (req, res) => {
 };
 
 const respondFAP = async (req, res) => {
-    const { action, destBranch, status, joki, firstReport, secondReport } =
-        req.body;
+    const { action, destBranch, status, joki } = req.body;
     const { id: FAP_ID } = req.params;
     const { branch, id: adminID } = req.auth;
 
@@ -180,15 +183,13 @@ const respondFAP = async (req, res) => {
         return responseValidationError(res, error_field);
     }
 
-    const reportStatus = { firstReport, secondReport };
-
     switch (action) {
         case 'DELEGATE':
             if (branch.name !== 'Mampang') {
                 return responseAccessDenied(res);
             }
 
-            const payloadDelegate = { branch: destBranch, reportStatus };
+            const payloadDelegate = { branch: destBranch };
             return await crudService.update(
                 res,
                 FAP.modelName,
@@ -201,7 +202,6 @@ const respondFAP = async (req, res) => {
                 joki,
                 branch: branch.id,
                 validatedBy: adminID,
-                reportStatus,
             };
             return await crudService.update(
                 res,
@@ -212,6 +212,58 @@ const respondFAP = async (req, res) => {
         default:
             return responseOnly(res, 400, 'Action is invalid.');
     }
+};
+
+const updateReportStatus = async (req, res) => {
+    const { id } = req.params;
+    const { firstStatus, secondStatus } = req.body;
+
+    let error_fields = {};
+    let findFap = null;
+
+    try {
+        findFap = await FAP.findById(id).lean();
+    } catch (error) {
+        return responseOnly(res, 500);
+    }
+
+    let payload = {};
+    if (firstStatus === '1') {
+        if (findFap.status !== 'DISETUJUI') {
+            setErrorField(
+                error_fields,
+                'reportStatus',
+                'Data nasabah belum disetujui.'
+            );
+        } else {
+            payload.firstStatus = '1';
+        }
+    } else if (secondStatus === '1') {
+        if (findFap.status !== 'DALAM PENGGARAPAN') {
+            setErrorField(
+                error_fields,
+                'reportStatus',
+                'Data nasabah belum dilakukan penggarapan.'
+            );
+        } else {
+            payload.secondStatus = '1';
+        }
+    } else {
+        await validateRequest(
+            error_fields,
+            'reportStatus',
+            firstStatus,
+            'required',
+            null,
+            'Status Laporan Pertama / Kedua'
+        );
+    }
+
+    if (validationFailed(error_fields)) {
+        return responseValidationError(res, error_fields);
+    }
+
+    return await crudService.update(res, FAP.modelName, payload, id);
 };
 
 const getAdminInfo = async (req, res) => {
@@ -287,4 +339,5 @@ module.exports = {
     getAdminInfo,
     getDestBranches,
     getJoki,
+    updateReportStatus,
 };

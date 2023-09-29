@@ -29,5 +29,11 @@ router.get(
     Admin.getDestBranches
 );
 router.get('/adm-get-joki', checkAuth, checkRole('Admin'), Admin.getJoki);
+router.patch(
+    '/:id/upd-rep-stat',
+    checkAuth,
+    checkRole('Admin'),
+    Admin.updateReportStatus
+);
 
 module.exports = router;
