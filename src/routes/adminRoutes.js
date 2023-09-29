@@ -21,5 +21,13 @@ router.patch(
 );
 router.get('/:id/det-fap', checkAuth, checkRole('Admin'), Admin.detailFAP);
 router.get('/adm-info', checkAuth, checkRole('Admin'), Admin.getAdminInfo);
+router.get(
+    '/get-dest-branches',
+    checkAuth,
+    checkRole('Admin'),
+    checkBranch('Mampang'),
+    Admin.getDestBranches
+);
+router.get('/adm-get-joki', checkAuth, checkRole('Admin'), Admin.getJoki);
 
 module.exports = router;

@@ -6,10 +6,12 @@ const {
     responseOnly,
     responseAccessDenied,
     responseValidationError,
+    responseData,
 } = require('../utils/httpResponse');
 const Branch = require('../models/Branch');
 const { validateRequest } = require('../utils/validator');
 const { DFLT_FINDBY_VAL } = require('../utils/constants');
+const Role = require('../models/Role');
 
 const monitorFAP = async (req, res) => {
     const { branch } = req.auth;
@@ -136,7 +138,8 @@ const adminApproval = async (req, res) => {
 };
 
 const respondFAP = async (req, res) => {
-    const { action, destBranch, status, joki, reportStatus } = req.body;
+    const { action, destBranch, status, joki, firstReport, secondReport } =
+        req.body;
     const { id: FAP_ID } = req.params;
     const { branch, id: adminID } = req.auth;
 
@@ -177,13 +180,15 @@ const respondFAP = async (req, res) => {
         return responseValidationError(res, error_field);
     }
 
+    const reportStatus = { firstReport, secondReport };
+
     switch (action) {
         case 'DELEGATE':
             if (branch.name !== 'Mampang') {
                 return responseAccessDenied(res);
             }
 
-            const payloadDelegate = { branch: destBranch };
+            const payloadDelegate = { branch: destBranch, reportStatus };
             return await crudService.update(
                 res,
                 FAP.modelName,
@@ -196,6 +201,7 @@ const respondFAP = async (req, res) => {
                 joki,
                 branch: branch.id,
                 validatedBy: adminID,
+                reportStatus,
             };
             return await crudService.update(
                 res,
@@ -225,10 +231,60 @@ const getAdminInfo = async (req, res) => {
     );
 };
 
+const getDestBranches = async (req, res) => {
+    const filter = { name: { $ne: 'Mampang' } };
+
+    const select = 'name';
+
+    return await crudService.get(
+        req,
+        res,
+        Branch.modelName,
+        null,
+        filter,
+        select
+    );
+};
+
+const getJoki = async (req, res) => {
+    try {
+        const { branch } = req.auth;
+        const jokiRole = await Role.findOne({ name: 'Joki' })
+            .select('name')
+            .lean();
+
+        const populate = [{ path: 'role', select: 'name' }];
+
+        const filter = { role: jokiRole._id, branch: branch.id };
+
+        const select = 'name status photo.url';
+
+        const joki = await Employee.find(filter)
+            .select(select)
+            .populate(populate)
+            .lean();
+        let payload = [];
+
+        for (let j of joki) {
+            const countTasks = await FAP.countDocuments({
+                status: { $in: ['DISETUJUI', 'DALAM PENGGARAPAN'] },
+                joki: j._id,
+            });
+            payload.push({ ...j, countTasks });
+        }
+
+        return responseData(res, 200, payload, 'Get all joki success');
+    } catch (error) {
+        return responseOnly(res, 500);
+    }
+};
+
 module.exports = {
     monitorFAP,
     adminApproval,
     respondFAP,
     detailFAP,
     getAdminInfo,
+    getDestBranches,
+    getJoki,
 };
