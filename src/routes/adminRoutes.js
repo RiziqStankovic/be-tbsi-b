@@ -35,6 +35,6 @@ router.patch(
     checkRole('Admin'),
     Admin.updateReportStatus
 );
-router.get('/create-joki', checkAuth, checkRole('Admin'), Admin.createJoki);
+router.post('/create-joki', checkAuth, checkRole('Admin'), Admin.createJoki);
 
 module.exports = router;
