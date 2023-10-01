@@ -14,8 +14,10 @@ const {
     validationFailed,
     setErrorField,
 } = require('../utils/validator');
-const { DFLT_FINDBY_VAL } = require('../utils/constants');
+const { DFLT_FINDBY_VAL, EMP_FLD_NAME } = require('../utils/constants');
 const Role = require('../models/Role');
+const path = require('path');
+const { uploadImage } = require('../utils/cloudinary');
 
 const monitorFAP = async (req, res) => {
     const { branch } = req.auth;
@@ -152,7 +154,7 @@ const respondFAP = async (req, res) => {
         error_field,
         'action',
         action,
-        'required;oneof=DELEGATE:APPROVAL'
+        'required;oneof=DELEGATE:APPROVAL:REJECTION'
     );
 
     if (action === 'DELEGATE') {
@@ -175,7 +177,14 @@ const respondFAP = async (req, res) => {
             error_field,
             'status',
             status,
-            'required;oneof=DISETUJUI:DITOLAK'
+            'required;oneof=DISETUJUI'
+        );
+    } else if (action === 'REJECTION') {
+        await validateRequest(
+            error_field,
+            'status',
+            status,
+            'required;oneof=DITOLAK'
         );
     }
 
@@ -209,6 +218,17 @@ const respondFAP = async (req, res) => {
                 payloadApproval,
                 FAP_ID
             );
+        case 'REJECTION':
+            const payloadRejection = {
+                status,
+                validatedBy: adminID,
+            };
+            return await crudService.update(
+                res,
+                FAP.modelName,
+                payloadRejection,
+                FAP_ID
+            );
         default:
             return responseOnly(res, 400, 'Action is invalid.');
     }
@@ -222,12 +242,14 @@ const updateReportStatus = async (req, res) => {
     let findFap = null;
 
     try {
-        findFap = await FAP.findById(id).lean();
+        findFap = await FAP.findById(id).select('status').lean();
     } catch (error) {
         return responseOnly(res, 500);
     }
 
-    let payload = {};
+    let payload = {
+        reportStatus: {},
+    };
     if (firstStatus === '1') {
         if (findFap.status !== 'DISETUJUI') {
             setErrorField(
@@ -236,7 +258,7 @@ const updateReportStatus = async (req, res) => {
                 'Data nasabah belum disetujui.'
             );
         } else {
-            payload.firstStatus = '1';
+            payload.reportStatus.firstReport = '1';
         }
     } else if (secondStatus === '1') {
         if (findFap.status !== 'DALAM PENGGARAPAN') {
@@ -246,7 +268,7 @@ const updateReportStatus = async (req, res) => {
                 'Data nasabah belum dilakukan penggarapan.'
             );
         } else {
-            payload.secondStatus = '1';
+            payload.reportStatus.secondReport = '1';
         }
     } else {
         await validateRequest(
@@ -331,6 +353,77 @@ const getJoki = async (req, res) => {
     }
 };
 
+const createJoki = async (req, res) => {
+    const { body, file } = req;
+    const { branch } = req.auth;
+
+    const fileExtension = path.extname(file.originalname);
+
+    /* Validation */
+    let error_field = {};
+
+    await validateRequest(error_field, 'name', body.name, 'required');
+    await validateRequest(
+        error_field,
+        'email',
+        body.email,
+        `required;email;unique:${ModelEmployee}:email`
+    );
+    await validateRequest(
+        error_field,
+        'email',
+        body.email,
+        `required;email;unique:${User.modelName}:email`
+    );
+    await validateRequest(
+        error_field,
+        'password',
+        body.password,
+        'required;min=6;onecapital;onenumber;onesymbol'
+    );
+    validatePasswordConfirmation(
+        error_field,
+        body.password,
+        body.passwordConfirmation
+    );
+    await validateRequest(
+        error_field,
+        'photo',
+        fileExtension,
+        'required;oneof=.jpg:.png:.jpeg',
+        'Ekstensi photo harus salah satu dari : jpg, png, jpeg'
+    );
+
+    if (Object.keys(error_field).length > 0) {
+        return responseValidationError(res, error_field);
+    }
+
+    const photo = await uploadImage(file.buffer, EMP_FLD_NAME);
+
+    let role;
+
+    try {
+        role = await Role.findOne({ name: 'Joki' }).select('name').lean();
+    } catch (error) {
+        console.log(error);
+        return responseOnly(res, 500);
+    }
+
+    const payload = {
+        ...body,
+        password: hashPassword(body.password),
+        photo: {
+            url: photo.secure_url,
+            public_id: photo.public_id,
+        },
+        branch: branch.id,
+        role,
+    };
+
+    // return responseOnly(res, 200, 'Sip');
+    return await crudService.save(res, Employee.modelName, payload);
+};
+
 module.exports = {
     monitorFAP,
     adminApproval,
@@ -340,4 +433,5 @@ module.exports = {
     getDestBranches,
     getJoki,
     updateReportStatus,
+    createJoki,
 };

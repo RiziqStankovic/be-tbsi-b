@@ -4,11 +4,12 @@ const checkAuth = require('../middlewares/checkAuth');
 const checkRole = require('../middlewares/checkRole');
 
 router.get(
-    '/joki-monit-work-fap',
+    '/joki-monit-fap',
     checkAuth,
     checkRole('Joki'),
     Joki.jokiMonitoringWork
 );
 router.patch('/:id/joki-appr', checkAuth, checkRole('Joki'), Joki.jokiApproval);
+router.post('/:id/send-fap-rep', checkAuth, checkRole('Joki'), Joki.sendReport);
 
 module.exports = router;
