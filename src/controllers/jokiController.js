@@ -182,8 +182,26 @@ const sendReport = async (req, res) => {
     return await crudService.save(res, Report.modelName, payload);
 };
 
+const getJokiInfo = async (req, res) => {
+    const { id } = req.params;
+
+    const select = 'email branch name photo.url status';
+
+    const populate = [{ path: 'branch', select: 'name' }];
+
+    return await crudService.show(
+        res,
+        Employee.modelName,
+        '_id',
+        id,
+        populate,
+        select
+    );
+};
+
 module.exports = {
     jokiMonitoringWork,
     jokiApproval,
     sendReport,
+    getJokiInfo,
 };
