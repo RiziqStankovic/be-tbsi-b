@@ -236,7 +236,7 @@ const respondFAP = async (req, res) => {
 
 const updateReportStatus = async (req, res) => {
     const { id } = req.params;
-    const { firstStatus, secondStatus } = req.body;
+    const { firstReport, secondReport } = req.body;
 
     let error_fields = {};
     let findFap = null;
@@ -250,7 +250,7 @@ const updateReportStatus = async (req, res) => {
     let payload = {
         reportStatus: {},
     };
-    if (firstStatus === '1') {
+    if (firstReport === '1') {
         if (findFap.status !== 'DISETUJUI') {
             setErrorField(
                 error_fields,
@@ -260,7 +260,7 @@ const updateReportStatus = async (req, res) => {
         } else {
             payload.reportStatus.firstReport = '1';
         }
-    } else if (secondStatus === '1') {
+    } else if (secondReport === '1') {
         if (findFap.status !== 'DALAM PENGGARAPAN') {
             setErrorField(
                 error_fields,
@@ -274,7 +274,7 @@ const updateReportStatus = async (req, res) => {
         await validateRequest(
             error_fields,
             'reportStatus',
-            firstStatus,
+            firstReport,
             'required',
             null,
             'Status Laporan Pertama / Kedua'
