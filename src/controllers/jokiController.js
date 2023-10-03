@@ -183,7 +183,7 @@ const sendReport = async (req, res) => {
 };
 
 const getJokiInfo = async (req, res) => {
-    const { id } = req.params;
+    const { id } = req.auth;
 
     const select = 'email branch name photo.url status';
 
