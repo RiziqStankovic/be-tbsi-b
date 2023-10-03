@@ -13,6 +13,7 @@ const {
     setErrorField,
 } = require('../utils/validator');
 const Employee = require('../models/Employee');
+const { DFLT_FINDBY_VAL } = require('../utils/constants');
 
 const jokiMonitoringWork = async (req, res) => {
     const { branch, id: jokiID } = req.auth;
@@ -199,9 +200,28 @@ const getJokiInfo = async (req, res) => {
     );
 };
 
+const getDetailFap = async (req, res) => {
+    const populate = [
+        { path: 'user', select: 'nik name age location phoneNumber' },
+    ];
+
+    const select =
+        'phoneBrand phoneRam recommendation maintainedApps paymentFailedApps rejectedApps status reportStatus';
+
+    return await crudService.show(
+        res,
+        FAP.modelName,
+        DFLT_FINDBY_VAL,
+        req.params.id,
+        populate,
+        select
+    );
+};
+
 module.exports = {
     jokiMonitoringWork,
     jokiApproval,
     sendReport,
     getJokiInfo,
+    getDetailFap,
 };

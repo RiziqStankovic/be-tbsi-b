@@ -59,7 +59,7 @@ const detailFAP = async (req, res) => {
     ];
 
     const select =
-        'phoneBrand phoneRam recommendation maintainedApps paymentFailedApps rejectedApps status';
+        'phoneBrand phoneRam recommendation maintainedApps paymentFailedApps rejectedApps status reportStatus';
 
     return await crudService.show(
         res,
