@@ -20,7 +20,9 @@ const jokiMonitoringWork = async (req, res) => {
 
     const filter = {
         branch: branch.id,
-        status: { $in: ['DALAM PENGGARAPAN', 'DISETUJUI'] },
+        status: {
+            $in: ['DALAM PENGGARAPAN', 'DISETUJUI', 'PENGGARAPAN SELESAI'],
+        },
         joki: jokiID,
     };
 
