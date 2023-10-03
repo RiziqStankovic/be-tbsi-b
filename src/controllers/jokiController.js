@@ -30,7 +30,7 @@ const jokiMonitoringWork = async (req, res) => {
         { path: 'joki', select: 'name' },
     ];
 
-    const select = 'user validatedBy joki reportStatus';
+    const select = 'user validatedBy joki reportStatus status';
 
     return await crudService.get(
         req,
