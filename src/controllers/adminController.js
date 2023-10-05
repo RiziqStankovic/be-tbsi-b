@@ -30,14 +30,12 @@ const monitorFAP = async (req, res) => {
     }
 
     let filter;
-    let countFilter = null;
     let populate = [{ path: 'user', select: 'name' }];
 
     let select = 'status createdAt';
 
     if (branch.name !== 'Mampang') {
         filter = { branch: branch.id };
-        countFilter = { ...filter };
     } else {
         filter = { branch: { $in: [branch.id, null] } };
     }
@@ -49,7 +47,7 @@ const monitorFAP = async (req, res) => {
         populate,
         filter,
         select,
-        countFilter
+        filter
     );
 };
 

@@ -188,9 +188,12 @@ const sendReport = async (req, res) => {
 const getJokiInfo = async (req, res) => {
     const { id } = req.auth;
 
-    const select = 'email branch name photo.url status';
+    const select = 'email branch name photo.url status role';
 
-    const populate = [{ path: 'branch', select: 'name' }];
+    const populate = [
+        { path: 'branch', select: 'name' },
+        { path: 'role', select: 'name' },
+    ];
 
     return await crudService.show(
         res,

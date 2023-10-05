@@ -44,6 +44,7 @@ const pagination = async (
             .select(select ?? '-password')
             .populate(populate ?? '')
             .lean();
+        console.log(countFilter);
 
         const totalData = await Model.countDocuments(countFilter ?? {});
         const totalPages = Math.ceil(totalData / limit);
