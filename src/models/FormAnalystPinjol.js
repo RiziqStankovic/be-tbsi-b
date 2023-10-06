@@ -62,6 +62,11 @@ const schema = new Schema(
                 default: '0',
             },
         },
+        barcodeInfo: {
+            isGenerated: { type: Boolean, default: false },
+            public_id: String,
+            url: String,
+        },
     },
     { timestamps: true }
 );

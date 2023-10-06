@@ -19,7 +19,10 @@ const pagination = async (
         let resp;
 
         if (search_by && search_val) {
-            filter = { ...filter, [search_by]: search_val };
+            filter = {
+                ...filter,
+                [search_by]: { $regex: new RegExp(search_val, 'i') },
+            };
         }
 
         let sort = {};

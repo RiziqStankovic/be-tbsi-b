@@ -12,8 +12,11 @@ const path = require('path');
 const pupeteer = require('puppeteer');
 const User = require('../models/User');
 const ReportFAP = require('../models/ReportFAP');
-const { SKPP_HTML_CONTENT } = require('../utils/constants');
-const { toLocalNumeric } = require('../utils/dateUtil');
+const { SKPP_HTML_CONTENT, BARCD_FLD_NAME } = require('../utils/constants');
+const { toLocalNumeric, toLocal } = require('../utils/dateUtil');
+const bwipjs = require('bwip-js');
+const sharp = require('sharp');
+const { uploadImage } = require('../utils/cloudinary');
 
 const createFAP = async (req, res) => {
     const { body } = req;
@@ -180,6 +183,8 @@ const generateSkpp = async (req, res) => {
         );
         skppHtml = skppHtml.replace('[NIK]', getReportFap.user.nik);
         skppHtml = skppHtml.replace('[LOCATION]', getReportFap.user.location);
+        const currDate = new Date();
+        skppHtml = skppHtml.replace('[TANGGAL]', toLocal(currDate));
 
         let progressAppArr = [];
 
@@ -195,8 +200,59 @@ const generateSkpp = async (req, res) => {
             progressAppArr.join(' ')
         );
 
-        /* Generate the pdf using pupeteer */
+        let bcdLink;
 
+        const fap = await FAP.findOne({ user: userID })
+            .select('user barcodeInfo')
+            .lean();
+
+        if (fap.barcodeInfo.isGenerated) {
+            bcdLink = fap.barcodeInfo.url;
+        } else {
+            /* Generate barcode using bwip-js */
+            const barcodeData = 'Jilliyan Ganteng';
+            const barcodeImageBuffer = await new Promise((resolve, reject) => {
+                bwipjs.toBuffer(
+                    {
+                        bcid: 'code128',
+                        text: barcodeData,
+                        scale: 3,
+                        height: 10,
+                        includetext: true,
+                        textxalign: 'center',
+                    },
+                    (err, buffer) => {
+                        if (err) {
+                            reject(err);
+                        } else {
+                            resolve(buffer);
+                        }
+                    }
+                );
+            });
+
+            /* Convert barcode bwip-js to jpwg image using sharp */
+            const barcodeImage = await sharp(barcodeImageBuffer)
+                .jpeg()
+                .toBuffer();
+
+            /* Upload the jpwg image to cloudinary */
+            const uploadBarcode = await uploadImage(
+                barcodeImage,
+                BARCD_FLD_NAME
+            );
+
+            /* Update barcode info */
+            fap.barcodeInfo.isGenerated = true;
+            fap.barcodeInfo.public_id = uploadBarcode.public_id;
+            fap.barcodeInfo.url = uploadBarcode.secure_url;
+            await FAP.updateOne({ _id: fap._id }, fap);
+            bcdLink = fap.barcodeInfo.url;
+        }
+
+        skppHtml = skppHtml.replace('[BARCODE]', bcdLink);
+
+        /* Generate the pdf using pupeteer */
         const browser = await pupeteer.launch();
         const page = await browser.newPage();
         await page.setContent(skppHtml, { waitUntil: 'networkidle0' });
@@ -212,6 +268,10 @@ const generateSkpp = async (req, res) => {
         console.log(error);
         return responseOnly(res, 500);
     }
+};
+
+const getReport = async (req, res) => {
+    const populate = [{ path: 'user' }];
 };
 
 const getFAPs = async (req, res) => {

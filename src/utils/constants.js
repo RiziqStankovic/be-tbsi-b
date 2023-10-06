@@ -1,5 +1,6 @@
 /* Cloudinary folder name */
 exports.EMP_FLD_NAME = 'malahayati_employee_photos';
+exports.BARCD_FLD_NAME = 'malahayati_barcode_skpp';
 
 /* Default findby value */
 exports.DFLT_FINDBY_VAL = '_id';
@@ -50,6 +51,7 @@ exports.SKPP_HTML_CONTENT = `
             section {
                 padding-left: 2.5rem;
                 padding-right: 2.5rem;
+                margin-bottom: 1rem;
             }
         </style>
     </head>
@@ -84,9 +86,7 @@ exports.SKPP_HTML_CONTENT = `
                         <li>: [NAMA_NASABAH]</li>
                         <li>: [POB], [DOB]</li>
                         <li>: [NIK]</li>
-                        <li style="word-break: break-all">
-                            : [LOCATION]
-                        </li>
+                        <li style="word-break: break-all">: [LOCATION]</li>
                     </ul>
                 </div>
             </section>
@@ -183,9 +183,7 @@ exports.SKPP_HTML_CONTENT = `
                         Kuasa dalam pengurusan dan penyelesaian Hutang Piutang
                         di beberapa aplikasi Pinjaman Online sebagai berikut :
                     </p>
-                    <p>
-                        [PROGRESS_APP_DONE]
-                    </p>
+                    <p>[PROGRESS_APP_DONE]</p>
                     <p style="text-align: justify">
                         yang berkaitan dengan pemberi kuasa sesuai pernjanjian
                         nomor 1947/MHY/SK/01/301123 Untuk selanjutnya
@@ -202,7 +200,39 @@ exports.SKPP_HTML_CONTENT = `
                     </p>
                 </div>
             </section>
+            <section id="sect_tandaTangan" style="margin-bottom: 2rem">
+                <div style="display: flex; justify-content: space-around">
+                   <img src="[BARCODE]" alt="Barcode" />
+                    <div
+                        style="
+                            display: flex;
+                            flex-direction: column;
+                            align-items: center;
+                            justify-content: space-between;
+                        "
+                    >
+                        <div
+                            style="
+                                display: flex;
+                                flex-direction: column;
+                                align-items: center;
+                            "
+                        >
+                            <p style="margin: 0; text-align: justify">
+                                Jakarta, [TANGGAL]
+                            </p>
+                            <p style="margin: 0; text-align: justify">
+                                Pemberi Kuasa
+                            </p>
+                        </div>
+                        <p style="margin-top: 6rem">
+                            (&nbsp;[NAMA_NASABAH]&nbsp;)
+                        </p>
+                    </div>
+                </div>
+            </section>
         </main>
     </body>
 </html>
+
 `;
