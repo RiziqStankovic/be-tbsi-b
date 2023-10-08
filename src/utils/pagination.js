@@ -40,6 +40,8 @@ const pagination = async (
         limit = parseInt(limit) || 10;
         const skip = (page - 1) * limit;
 
+        console.log(filter);
+
         resp = await Model.find(filter)
             .sort(sort)
             .skip(skip)
@@ -47,7 +49,6 @@ const pagination = async (
             .select(select ?? '-password')
             .populate(populate ?? '')
             .lean();
-        console.log(countFilter);
 
         const totalData = await Model.countDocuments(countFilter ?? {});
         const totalPages = Math.ceil(totalData / limit);

@@ -23,5 +23,17 @@ router.get(
     checkRole('Superadmin'),
     Superadmin.getProfile
 );
+router.get(
+    '/monit-usr',
+    checkAuth,
+    checkRole('Superadmin'),
+    Superadmin.monitoringNasabah
+);
+router.get(
+    '/:id/det-usr',
+    checkAuth,
+    checkRole('Superadmin'),
+    Superadmin.getDetailNasabah
+);
 
 module.exports = router;

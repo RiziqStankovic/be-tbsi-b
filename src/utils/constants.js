@@ -6,8 +6,7 @@ exports.BARCD_FLD_NAME = 'malahayati_barcode_skpp';
 exports.DFLT_FINDBY_VAL = '_id';
 
 /* Skpp Html Content */
-exports.SKPP_HTML_CONTENT = `
-<!DOCTYPE html>
+exports.SKPP_HTML_CONTENT = `<!DOCTYPE html>
 <html lang="en">
     <head>
         <meta charset="UTF-8" />
@@ -57,8 +56,8 @@ exports.SKPP_HTML_CONTENT = `
     </head>
     <body>
         <header class="header">
-            <h1>Malahayati</h1>
-            <h1>Consultant</h1>
+            <h1 style="padding: 0; margin: 0">Malahayati</h1>
+            <h1 style="padding: 0; margin: 0">Consultant</h1>
         </header>
         <main class="main">
             <section id="sect_suratKuasa">
@@ -67,11 +66,15 @@ exports.SKPP_HTML_CONTENT = `
                         text-decoration: underline;
                         text-underline-offset: 0.2em;
                         font-weight: 400;
+                        padding: 0;
+                        margin: 0;
                     "
                 >
                     Surat Kuasa Pengalihan Penagihan
                 </p>
-                <p>AHU-0038843.AH.01.01/23/MHY/SH/[SERIAL_NO]</p>
+                <p style="padding: 0; margin-top: 0.5rem">
+                    AHU-0038843.AH.01.01/23/MHY/SH/[SERIAL_NO]
+                </p>
             </section>
             <section id="sect_yangBertandaTanganDibawah">
                 <p>Yang bertanda tangan dibawah :</p>
@@ -92,7 +95,7 @@ exports.SKPP_HTML_CONTENT = `
             </section>
             <section id="sect_bodySurat">
                 <div>
-                    <p>
+                    <p style="padding: 0; margin: 0">
                         Selanjutnya disebut sebagai
                         <span
                             style="
@@ -104,7 +107,7 @@ exports.SKPP_HTML_CONTENT = `
                         >
                         Yang menunjuk domisili hukum pada
                     </p>
-                    <p>
+                    <p style="padding: 0; margin: 0">
                         alamat Penerima / Pemegang kuasa ini, dengan ini
                         benar-benar memberi kuasa kepada :
                     </p>
@@ -202,7 +205,7 @@ exports.SKPP_HTML_CONTENT = `
             </section>
             <section id="sect_tandaTangan" style="margin-bottom: 2rem">
                 <div style="display: flex; justify-content: space-around">
-                   <img src="[BARCODE]" alt="Barcode" />
+                    <img src="[BARCODE]" alt="barcode" />
                     <div
                         style="
                             display: flex;

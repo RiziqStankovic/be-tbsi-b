@@ -1,5 +1,6 @@
 const Employee = require('../models/Employee');
 const LeaveReq = require('../models/EmployeeLeaveRequest');
+const FAP = require('../models/FormAnalystPinjol');
 const { DFLT_FINDBY_VAL } = require('../utils/constants');
 const crudService = require('../utils/crudService');
 const { responseOnly } = require('../utils/httpResponse');
@@ -43,8 +44,8 @@ const getProfile = async (req, res) => {
     const { id } = req.auth;
 
     const populate = [
-        { page: 'role', select: 'name' },
-        { page: 'branch', select: 'branch' },
+        { path: 'role', select: 'name' },
+        { path: 'branch', select: 'name' },
     ];
 
     return await crudService.show(
@@ -56,8 +57,48 @@ const getProfile = async (req, res) => {
     );
 };
 
+const monitoringNasabah = async (req, res) => {
+    const populate = [
+        { path: 'user', select: 'name' },
+        { path: 'branch', select: 'name' },
+        { path: 'joki', select: 'name' },
+        { path: 'validatedBy', select: 'name' },
+    ];
+
+    const select = 'user branch joki validatedBy';
+
+    return await crudService.get(
+        req,
+        res,
+        FAP.modelName,
+        populate,
+        null,
+        select
+    );
+};
+
+const getDetailNasabah = async (req, res) => {
+    const { id } = req.params;
+    const populate = [
+        { path: 'user', select: 'name' },
+        { path: 'branch', select: 'name' },
+        { path: 'joki', select: 'name' },
+        { path: 'validatedBy', select: 'name' },
+    ];
+
+    return await crudService.show(
+        res,
+        FAP.modelName,
+        DFLT_FINDBY_VAL,
+        id,
+        populate
+    );
+};
+
 module.exports = {
     monitoringLeaveReq,
     leaveReqAppr,
     getProfile,
+    monitoringNasabah,
+    getDetailNasabah,
 };
