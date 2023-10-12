@@ -15,31 +15,17 @@ router.post(
     upload.single('photo'),
     Employee.createEmployee
 );
-router.post('/login', Employee.authenticateEmploye);
 router.post(
     '/create-leave-req',
     checkAuth,
     checkRole(['Admin', 'Joki']),
     Employee.createLeaveReq
 );
-router.get(
-    '/get-employees',
-    checkAuth,
-    checkRole('Superadmin'),
-    Employee.getEmployees
-);
-router.get('/:id/show-employee', checkAuth, Employee.showEmploye);
 router.patch(
-    '/:id/update-employee',
+    '/upd-stat',
     checkAuth,
-    checkRole('Superadmin'),
-    Employee.updateEmployee
-);
-router.delete(
-    '/:id/remove-employee',
-    checkAuth,
-    checkRole('Superadmin'),
-    Employee.removeEmployee
+    checkRole(['Admin', 'Joki']),
+    Employee.updateStatEmp
 );
 
 module.exports = router;

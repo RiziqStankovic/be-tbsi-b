@@ -24,6 +24,10 @@ const reportSchema = new Schema(
             ref: 'Employee',
         },
         desc: String,
+        branch: {
+            type: Schema.Types.ObjectId,
+            ref: 'branch',
+        },
     },
     { timestamps: true }
 );

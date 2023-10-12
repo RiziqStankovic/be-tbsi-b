@@ -5,12 +5,16 @@ const checkRole = (pRole) => {
     return async (req, res, next) => {
         const { role } = req.auth;
 
+        if (role.name === 'Superadmin') {
+            return next();
+        }
+
         if (Array.isArray(pRole)) {
             if (pRole.includes(role.name)) {
                 return next();
             }
         } else {
-            if (role.name === 'Superadmin' || role.name === pRole) {
+            if (role.name === pRole) {
                 return next();
             }
         }

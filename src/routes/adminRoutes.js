@@ -5,6 +5,7 @@ const Admin = require('../controllers/adminController');
 const checkAuth = require('../middlewares/checkAuth');
 const checkBranch = require('../middlewares/checkBranch');
 const checkRole = require('../middlewares/checkRole');
+const upload = require('../middlewares/upload');
 
 router.get('/monit-fap', checkAuth, checkRole('Admin'), Admin.monitorFAP);
 router.post(
@@ -35,6 +36,12 @@ router.patch(
     checkRole('Admin'),
     Admin.updateReportStatus
 );
-router.post('/create-joki', checkAuth, checkRole('Admin'), Admin.createJoki);
+router.post(
+    '/create-joki',
+    checkAuth,
+    checkRole('Admin'),
+    upload.single('photo'),
+    Admin.createJoki
+);
 
 module.exports = router;

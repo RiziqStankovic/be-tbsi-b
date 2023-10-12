@@ -12,7 +12,7 @@ router.get(
     Superadmin.monitoringLeaveReq
 );
 router.patch(
-    '/:id/leave-req-appr',
+    '/:id/leave-appr',
     checkAuth,
     checkRole('Superadmin'),
     Superadmin.leaveReqAppr
@@ -35,5 +35,13 @@ router.get(
     checkRole('Superadmin'),
     Superadmin.getDetailNasabah
 );
+router.get(
+    '/get-stats',
+    checkAuth,
+    checkRole('Superadmin'),
+    Superadmin.getStatistics
+);
+router.get('/rep', Superadmin.getReportTesting);
+router.get('/fap', Superadmin.getFap);
 
 module.exports = router;

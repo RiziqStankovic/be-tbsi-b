@@ -13,11 +13,13 @@ const {
     validateRequest,
     validationFailed,
     setErrorField,
+    validatePasswordConfirmation,
 } = require('../utils/validator');
 const { DFLT_FINDBY_VAL, EMP_FLD_NAME } = require('../utils/constants');
 const Role = require('../models/Role');
 const path = require('path');
 const { uploadImage } = require('../utils/cloudinary');
+const { hashPassword } = require('../utils/bcrypt');
 
 const monitorFAP = async (req, res) => {
     const { branch } = req.auth;
@@ -325,7 +327,10 @@ const getJoki = async (req, res) => {
             .select('name')
             .lean();
 
-        const populate = [{ path: 'role', select: 'name' }];
+        const populate = [
+            { path: 'role', select: 'name' },
+            { path: 'branch', select: 'name' },
+        ];
 
         const filter = { role: jokiRole._id, branch: branch.id };
 
@@ -355,6 +360,8 @@ const createJoki = async (req, res) => {
     const { body, file } = req;
     const { branch } = req.auth;
 
+    console.log('FILE === ', file);
+
     const fileExtension = path.extname(file.originalname);
 
     /* Validation */
@@ -365,7 +372,7 @@ const createJoki = async (req, res) => {
         error_field,
         'email',
         body.email,
-        `required;email;unique:${ModelEmployee}:email`
+        `required;email;unique:${Employee.modelName}:email`
     );
     await validateRequest(
         error_field,

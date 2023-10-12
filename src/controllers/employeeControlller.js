@@ -13,6 +13,7 @@ const {
     responseOnly,
     responseAPINotFound,
     responseAuth,
+    responseAccessDenied,
 } = require('../utils/httpResponse');
 const path = require('path');
 const { uploadImage } = require('../utils/cloudinary');
@@ -89,79 +90,8 @@ const createEmployee = async (req, res) => {
     return await crudService.save(res, ModelEmployee, payload);
 };
 
-const getEmployees = async (req, res) => {
-    let populate = ['branch', 'role'];
-
-    return await crudService.get(req, res, ModelEmployee, populate);
-};
-
-const showEmploye = async (req, res) => {
-    let populate = ['branch', 'role'];
-    return await crudService.show(
-        res,
-        ModelEmployee,
-        DFLT_FINDBY_VAL,
-        req.params.id,
-        populate
-    );
-};
-
-const updateEmployee = async (req, res) => {
-    return await crudService.update(
-        res,
-        ModelEmployee,
-        req.body,
-        req.params.id
-    );
-};
-
-const removeEmployee = async (req, res) => {
-    return await crudService.remove(res, ModelEmployee, req.params.id);
-};
-
-const authenticateEmploye = async (req, res) => {
-    try {
-        const { email, password } = req.body;
-
-        const employee = await Employee.findOne({ email })
-            .populate([
-                { path: 'branch', select: 'name' },
-                { path: 'role', select: 'name' },
-            ])
-            .lean();
-
-        if (!employee) {
-            return responseOnly(res, 400, 'Email salah.');
-        }
-
-        if (!comparePassword(password, employee.password)) {
-            return responseOnly(res, 400, 'Password salah.');
-        }
-
-        const payload = {
-            id: employee._id,
-            branch: {
-                id: employee.branch._id,
-                name: employee.branch.name,
-            },
-            // roleID: employee.role,
-            // branchID: employee.branch,
-            role: {
-                id: employee.role._id,
-                name: employee.role.name,
-            },
-        };
-
-        const token = generateToken(payload);
-
-        return responseAuth(res, token);
-    } catch (error) {
-        console.log(error);
-        return responseOnly(res, 500);
-    }
-};
-
 const createLeaveReq = async (req, res) => {
+    const { id } = req.auth;
     const { body } = req;
 
     let error_field = {};
@@ -169,6 +99,7 @@ const createLeaveReq = async (req, res) => {
     try {
         const findonepending = await LeaveReq.findOne({
             status: 'MENUNGGU PERSETUJUAN',
+            employee: id,
         }).lean();
         if (findonepending) {
             setErrorField(
@@ -182,6 +113,7 @@ const createLeaveReq = async (req, res) => {
             const findonerunning = await LeaveReq.findOne({
                 dateTo: { $gt: Date.now() },
                 status: 'DISETUJUI',
+                employee: id,
             }).lean();
             if (findonerunning) {
                 setErrorField(
@@ -225,7 +157,7 @@ const createLeaveReq = async (req, res) => {
     await validateRequest(
         error_field,
         'employee',
-        body.employee,
+        id,
         `required;objectid:${Employee.modelName}`,
         null,
         'ID Karyawan'
@@ -235,15 +167,37 @@ const createLeaveReq = async (req, res) => {
         return responseValidationError(res, error_field);
     }
 
-    return await crudService.save(res, LeaveReq.modelName, body);
+    try {
+        await Employee.findByIdAndUpdate(id, { $set: { status: 'CUTI' } });
+    } catch (error) {
+        console.log(error);
+        return responseOnly(res, 500);
+    }
+
+    const payload = { ...body, employee: id };
+
+    return await crudService.save(res, LeaveReq.modelName, payload);
+};
+
+const updateStatEmp = async (req, res) => {
+    const { id } = req.auth;
+
+    try {
+        const findone = await Employee.findById(id).select('status').lean();
+        if (findone.status !== 'CUTI') {
+            return responseAccessDenied(res);
+        }
+    } catch (error) {
+        console.log(error);
+        return responseOnly(res, 500);
+    }
+
+    const payload = { status: 'AKTIF' };
+    return await crudService.update(res, Employee.modelName, payload, id);
 };
 
 module.exports = {
     createEmployee,
-    getEmployees,
-    showEmploye,
-    removeEmployee,
-    updateEmployee,
-    authenticateEmploye,
     createLeaveReq,
+    updateStatEmp,
 };

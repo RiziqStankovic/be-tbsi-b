@@ -3,6 +3,7 @@ const FAP = require('../models/FormAnalystPinjol');
 const {
     responseValidationError,
     responseOnly,
+    responseData,
 } = require('../utils/httpResponse');
 const crudService = require('../utils/crudService');
 const { validateRequest, validationFailed } = require('../utils/validator');
@@ -274,42 +275,66 @@ const getReport = async (req, res) => {
     const populate = [{ path: 'user' }];
 };
 
-const getFAPs = async (req, res) => {
-    const populate = ['branch', 'joki', 'validatedBy'];
+const getReportFap = async (req, res) => {
+    const { id: fapID } = req.params;
+    const { role } = req.auth;
 
-    return await crudService.get(req, res, FAP.modelName, populate);
-};
+    let findfap;
 
-const showFAP = async (req, res) => {
-    const populate = ['branch', 'joki', 'validatedBy'];
+    try {
+        findfap = await FAP.findById(fapID).select('status').lean();
+    } catch (error) {
+        console.log(error);
+        return responseOnly(res, 500);
+    }
 
-    return await crudService.show(
-        res,
-        FAP.modelName,
-        '_id',
-        req.params.id,
-        populate
-    );
-};
+    const populate = [{ path: 'joki', select: 'name' }];
+    const select = 'progressApps joki user createdAt';
 
-const updateFAP = async (req, res) => {
-    return await crudService.update(
-        res,
-        FAP.modelName,
-        req.body,
-        req.params.id
-    );
-};
+    if (findfap.status === 'PENGGARAPAN SELESAI') {
+        try {
+            const findReport = await ReportFAP.findOne({ fap: fapID })
+                .populate(populate)
+                .select(select)
+                .lean();
 
-const removeFAP = async (req, res) => {
-    return await crudService.remove(res, FAP.modelName, req.params.id);
+            let respData = {};
+            let tempProgressArr = [];
+            let tempProgress = {};
+            let tempRevenue = [];
+
+            for (const pr of findReport.progressApps) {
+                tempProgress = {
+                    ...pr,
+                    revenue: role.name === 'Superadmin' ? pr.revenue : 0,
+                };
+                tempProgressArr.push(tempProgress);
+                tempRevenue.push(tempProgress.revenue);
+            }
+
+            const totalRevenue = tempRevenue.reduce(
+                (total, item) => total + item,
+                0
+            );
+
+            respData = {
+                ...findReport,
+                progressApps: tempProgressArr,
+                totalRevenue,
+            };
+
+            return responseData(res, 200, respData, 'Data found.');
+        } catch (error) {
+            console.log(error);
+            return responseOnly(res, 500);
+        }
+    }
+
+    return responseData(res, 204, [], 'No content');
 };
 
 module.exports = {
     createFAP,
-    getFAPs,
-    showFAP,
-    updateFAP,
-    removeFAP,
     generateSkpp,
+    getReportFap,
 };
