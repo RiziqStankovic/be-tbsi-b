@@ -105,11 +105,12 @@ const getDetailNasabah = async (req, res) => {
 };
 
 const getStatistics = async (req, res) => {
+    let { branch: superadminBranch } = req.auth;
     let { from, to, branch } = req.query;
 
     try {
-        const gte = from === undefined ? getOneMonthAgo() : new Date(from);
-        const lte = to === undefined ? new Date() : new Date(to);
+        const gte = from ? new Date(from) : getOneMonthAgo();
+        const lte = to ? new Date(to) : new Date();
         let totalFaps = [];
         let totalRevenues = [];
 
@@ -118,11 +119,11 @@ const getStatistics = async (req, res) => {
         for (const tr of timerange) {
             let dateFilt = { $gte: tr.startDay, $lte: tr.endDay };
             const totalFap = await FAP.countDocuments({
-                branch,
+                branch: branch ?? superadminBranch,
                 createdAt: dateFilt,
             }).lean();
             totalFaps.push({
-                branch,
+                branch: branch ?? superadminBranch,
                 label: getDateAndMonthOnly(tr.startDay),
                 totalFap,
             });

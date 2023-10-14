@@ -8,11 +8,13 @@ const {
     responseValidationError,
     responseOnly,
     responseAuth,
+    responseData,
 } = require('../utils/httpResponse');
 const crudService = require('../utils/crudService');
-const { hashPassword, comparePassword } = require('../utils/bcrypt');
+const { hashPassword } = require('../utils/bcrypt');
 const generateSerialNo = require('../utils/generateSerialNo');
-const { generateToken } = require('../utils/jwt');
+const ReportFAP = require('../models/ReportFAP');
+const FormAnalystPinjol = require('../models/FormAnalystPinjol');
 
 const Model = User.modelName;
 
@@ -83,42 +85,35 @@ const createUser = async (req, res) => {
     // return responseOnly(res, 200, 'Sip');
 };
 
-const getUsers = async (req, res) => {
-    return await crudService.get(req, res, Model);
-};
-
-const showUser = async (req, res) => {
-    return await crudService.show(res, Model, '_id', req.params.id);
-};
-
-const updateUser = async (req, res) => {
-    return await crudService.update(res, Model, req.body, req, params.id);
-};
-
-const removeUser = async (req, res) => {
-    return await crudService.remove(res, Model, req.params.id);
-};
-
-const authenticateUser = async (req, res) => {
+const getReport = async (req, res) => {
     try {
-        const { email, password } = req.body;
+        const { id } = req.auth;
 
-        const user = await User.findOne({ email }).lean();
-        if (!user) {
-            return responseOnly(res, 400, 'Email salah.');
-        }
+        let resp = {};
 
-        if (!comparePassword(password, user.password)) {
-            return responseOnly(res, 400, 'Password salah.');
-        }
+        const report = await ReportFAP.findOne({ user: id })
+            .select('progressApps')
+            .lean();
 
-        const payload = {
-            id: user._id,
-        };
+        resp.report = report;
 
-        const token = generateToken(payload);
+        const totalRevenue = report.progressApps.reduce((acc, app) => {
+            return acc + app.revenue;
+        }, 0);
 
-        return responseAuth(res, token);
+        resp.totalRevenue = totalRevenue;
+
+        const findFap = await FormAnalystPinjol.findOne({ user: id })
+            .select('barcodeInfo')
+            .lean();
+
+        resp.barcodeInfo = findFap.barcodeInfo;
+
+        const user = await User.findById(id).select('name serialNo').lean();
+
+        resp.user = user;
+
+        return responseData(res, 200, resp, 'Get report success');
     } catch (error) {
         console.log(error);
         return responseOnly(res, 500);
@@ -127,9 +122,5 @@ const authenticateUser = async (req, res) => {
 
 module.exports = {
     createUser,
-    getUsers,
-    showUser,
-    updateUser,
-    removeUser,
-    authenticateUser,
+    getReport,
 };

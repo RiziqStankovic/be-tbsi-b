@@ -1,11 +1,9 @@
 const router = require('express').Router();
 const User = require('../controllers/userController');
+const checkAuth = require('../middlewares/checkAuth');
+const checkRole = require('../middlewares/checkRole');
 
 router.post('/create-user', User.createUser);
-router.post('/login', User.authenticateUser);
-router.get('/get-users', User.getUsers);
-router.get('/:id/show-user', User.showUser);
-router.patch('/:id/update-user', User.updateUser);
-router.delete('/:id/remove-user', User.removeUser);
+router.get('/get-rep', checkAuth, checkRole('User'), User.getReport);
 
 module.exports = router;

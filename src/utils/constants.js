@@ -113,7 +113,7 @@ exports.SKPP_HTML_CONTENT = `<!DOCTYPE html>
                     </p>
                 </div>
                 <div>
-                    <p>
+                    <p style="margin: 0">
                         <span style="margin-right: 2rem">1.</span>
                         <span>Cindy Flesilia, SE</span>
                     </p>
@@ -122,6 +122,7 @@ exports.SKPP_HTML_CONTENT = `<!DOCTYPE html>
                             padding-left: 3rem;
                             padding-right: 3rem;
                             text-align: justify;
+                            margin: 0;
                         "
                     >
                         Yang bersangkutan adalah
@@ -172,16 +173,16 @@ exports.SKPP_HTML_CONTENT = `<!DOCTYPE html>
                         >
                         <br />
                     </p>
-                    <p>
+                    <p style="margin: 0">
                         Selanjutnya Baik Sendiri-sendiri maupun Bersama-sama
                         disebut sebagai
                         <strong>PENERIMA / PEMEGANG KUASA.</strong>
                     </p>
-                    <p style="font-weight: bold">
+                    <p style="font-weight: bold; margin: 0">
                         =========================== KHUSUS
                         ==============================
                     </p>
-                    <p>
+                    <p style="margin: 0">
                         Untuk dan atas nama Pemberi Kuasa , Mewakili Pemberi
                         Kuasa dalam pengurusan dan penyelesaian Hutang Piutang
                         di beberapa aplikasi Pinjaman Online sebagai berikut :
@@ -204,8 +205,12 @@ exports.SKPP_HTML_CONTENT = `<!DOCTYPE html>
                 </div>
             </section>
             <section id="sect_tandaTangan" style="margin-bottom: 2rem">
-                <div style="display: flex; justify-content: space-around">
-                    <img src="[BARCODE]" alt="barcode" />
+                <div style="display: flex; justify-content: space-around;align-items: center;">
+                    <img
+                        style="width: 80px; height: 80px"
+                        src="data:image/png;base64,[BARCODE]"
+                        alt="barcode"
+                    />
                     <div
                         style="
                             display: flex;
@@ -237,5 +242,6 @@ exports.SKPP_HTML_CONTENT = `<!DOCTYPE html>
         </main>
     </body>
 </html>
+
 
 `;

@@ -7,17 +7,14 @@ const {
     setErrorField,
 } = require('../utils/validator');
 const crudService = require('../utils/crudService');
-const { hashPassword, comparePassword } = require('../utils/bcrypt');
+const { hashPassword } = require('../utils/bcrypt');
 const {
     responseValidationError,
     responseOnly,
-    responseAPINotFound,
-    responseAuth,
     responseAccessDenied,
 } = require('../utils/httpResponse');
 const path = require('path');
 const { uploadImage } = require('../utils/cloudinary');
-const { generateToken } = require('../utils/jwt');
 const { EMP_FLD_NAME, DFLT_FINDBY_VAL } = require('../utils/constants');
 const LeaveReq = require('../models/EmployeeLeaveRequest');
 const dateUtil = require('../utils/dateUtil');

@@ -6,6 +6,7 @@ const {
     responseOnly,
     responseAccessDenied,
     responseValidationError,
+    responseData,
 } = require('../utils/httpResponse');
 const {
     validateRequest,
@@ -14,6 +15,8 @@ const {
 } = require('../utils/validator');
 const Employee = require('../models/Employee');
 const { DFLT_FINDBY_VAL } = require('../utils/constants');
+const Excel = require('exceljs');
+const ReportFAP = require('../models/ReportFAP');
 
 const jokiMonitoringWork = async (req, res) => {
     const { branch, id: jokiID } = req.auth;
@@ -81,110 +84,6 @@ const jokiApproval = async (req, res) => {
     return await crudService.update(res, FAP.modelName, payload, fapID);
 };
 
-const sendReport = async (req, res) => {
-    const { body } = req;
-    const { id: fapID } = req.params;
-    const { id: jokiID } = req.auth;
-
-    let error_field = {};
-
-    /* validation */
-
-    try {
-        const findFap = await FAP.findById(fapID).select('reportStatus').lean();
-
-        if (findFap.reportStatus.secondReport !== '1') {
-            setErrorField(
-                error_field,
-                'secondReport',
-                'Laporan kedua belum selesai.'
-            );
-        }
-    } catch (error) {
-        console.log(error);
-        return responseOnly(res, 500);
-    }
-
-    await validateRequest(
-        error_field,
-        'user',
-        body.user,
-        'required;objectid:' + User.modelName
-    );
-
-    await validateRequest(
-        error_field,
-        'fap',
-        fapID,
-        'required;objectid:' + FAP.modelName
-    );
-
-    await validateRequest(
-        error_field,
-        'progressApps',
-        body.progressApps,
-        'required;array:notempty',
-        null,
-        'Laporan Penggarapan'
-    );
-
-    let num = 0;
-    let idx = 0;
-    if (body.progressApps.length > 0) {
-        num = 1;
-        for (let pApps of body.progressApps) {
-            await validateRequest(
-                error_field,
-                'progressApps.name' + idx,
-                pApps.name,
-                'required',
-                null,
-                'Nama aplikasi penggarapan ke ' + num
-            );
-            await validateRequest(
-                error_field,
-                'progressApss.revenue' + idx,
-                pApps.revenue,
-                'required;numeric',
-                null,
-                'Total pencairan ke ' + num
-            );
-            await validateRequest(
-                error_field,
-                'progressApps.desc' + idx,
-                pApps.desc,
-                'required',
-                null,
-                'Deskripsi penggarapan ke ' + num
-            );
-
-            num++;
-            idx++;
-        }
-    }
-
-    if (validationFailed(error_field)) {
-        return responseValidationError(res, error_field);
-    }
-
-    const payload = {
-        ...body,
-        joki: jokiID,
-        fap: fapID,
-    };
-
-    try {
-        await FAP.findByIdAndUpdate(fapID, {
-            $set: { status: 'PENGGARAPAN SELESAI' },
-        }).lean();
-    } catch (error) {
-        console.log(error);
-        return responseOnly(res, 500);
-    }
-
-    return await crudService.save(res, Report.modelName, payload);
-};
-
 const getJokiInfo = async (req, res) => {
     const { id } = req.auth;
 
@@ -223,10 +122,138 @@ const getDetailFap = async (req, res) => {
     );
 };
 
+const downloadTemplate = async (req, res) => {
+    try {
+        const workbook = new Excel.Workbook();
+        const worksheet = workbook.addWorksheet('Sheet 1');
+
+        // Set the width and border of columns A, B, and C
+        ['A', 'B', 'C'].forEach((column) => {
+            const col = worksheet.getColumn(column);
+            col.width = 40;
+            col.border = {
+                top: { style: 'thin' },
+                left: { style: 'thin' },
+                bottom: { style: 'thin' },
+                right: { style: 'thin' },
+            };
+        });
+
+        const namaAppCell = worksheet.getCell('A1');
+        namaAppCell.value = 'Nama Aplikasi';
+        namaAppCell.font = { bold: true, size: 14 };
+        namaAppCell.alignment = { horizontal: 'center', vertical: 'middle' };
+        namaAppCell.fill = {
+            type: 'pattern',
+            pattern: 'solid',
+            fgColor: { argb: 'FFFFFF00' },
+        };
+
+        const totalPencairanCell = worksheet.getCell('B1');
+        totalPencairanCell.value = 'Total Pencairan';
+        totalPencairanCell.font = { bold: true, size: 14 };
+        totalPencairanCell.alignment = {
+            horizontal: 'center',
+            vertical: 'middle',
+        };
+        totalPencairanCell.fill = {
+            type: 'pattern',
+            pattern: 'solid',
+            fgColor: { argb: 'FFFFFF00' },
+        };
+
+        const deskripsiCell = worksheet.getCell('C1');
+        deskripsiCell.value = 'Deskripsi';
+        deskripsiCell.font = { bold: true, size: 14 };
+        deskripsiCell.alignment = { horizontal: 'center', vertical: 'middle' };
+        deskripsiCell.fill = {
+            type: 'pattern',
+            pattern: 'solid',
+            fgColor: { argb: 'FFFFFF00' },
+        };
+
+        const filename = 'template_laporan_joki';
+
+        res.setHeader(
+            'Content-Type',
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        );
+        res.setHeader(
+            'Content-Disposition',
+            'attachment; filename=' + filename + '.xlsx'
+        );
+
+        await workbook.xlsx.write(res);
+        res.end();
+    } catch (error) {
+        console.log(error);
+        return responseOnly(res, 500);
+    }
+};
+
+const sendReport = async (req, res) => {
+    try {
+        const { buffer } = req.file;
+        const { user } = req.query;
+        const { id, branch } = req.auth;
+
+        const findFap = await FAP.findOne({ user })
+            .select('reportStatus')
+            .lean();
+
+        let error_field = {};
+
+        if (findFap.reportStatus.secondReport !== '1') {
+            setErrorField(
+                error_field,
+                'secondReport',
+                'Laporan kedua belum selesai.'
+            );
+        }
+
+        if (validationFailed(error_field)) {
+            return responseValidationError(res, error_field);
+        }
+
+        const workbook = new Excel.Workbook();
+        await workbook.xlsx.load(buffer);
+
+        const worksheet = workbook.getWorksheet('Sheet 1');
+
+        const report = new ReportFAP({
+            user,
+            fap: findFap._id,
+            branch: branch.id,
+            joki: id,
+            progressApps: [],
+            desc: 'Cair',
+        });
+
+        for (let i = 2; i <= worksheet.rowCount; i++) {
+            report.progressApps.push({
+                name: worksheet.getCell('A' + i).value,
+                revenue: worksheet.getCell('B' + i).value,
+                desc: worksheet.getCell('C' + i).value,
+            });
+        }
+
+        await FAP.findByIdAndUpdate(findFap._id, {
+            $set: { status: 'PENGGARAPAN SELESAI' },
+        });
+        await report.save();
+
+        return responseData(res, 201, null, 'Berhasil upload data');
+    } catch (error) {
+        console.log(error);
+        return responseOnly(res, 500);
+    }
+};
+
 module.exports = {
     jokiMonitoringWork,
     jokiApproval,
     sendReport,
     getJokiInfo,
     getDetailFap,
+    downloadTemplate,
 };

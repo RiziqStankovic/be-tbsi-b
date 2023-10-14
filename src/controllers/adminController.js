@@ -59,7 +59,7 @@ const detailFAP = async (req, res) => {
     ];
 
     const select =
-        'phoneBrand phoneRam recommendation maintainedApps paymentFailedApps rejectedApps status reportStatus';
+        'phoneBrand phoneRam recommendation maintainedApps paymentFailedApps rejectedApps status reportStatus isCalled';
 
     return await crudService.show(
         res,
@@ -429,6 +429,33 @@ const createJoki = async (req, res) => {
     return await crudService.save(res, Employee.modelName, payload);
 };
 
+const updateIsCalled = async (req, res) => {
+    const { id } = req.params;
+    const payload = { isCalled: '1' };
+    return await crudService.update(res, FAP.modelName, payload, id);
+};
+
+const sendWhatsapp = async (req, res) => {
+    try {
+        const { phoneNumber } = req.query;
+        console.log(phoneNumber);
+        let encodedText = encodeURIComponent(
+            'Halo data kamu sudah kami terima, admin akan segera menghubungi mu, terima kasih telah menggunakan layanan malahayati'
+        );
+        encodedText = encodedText
+            .replace(/%5Cn/g, '%0A')
+            .replace(/^%22|%22$/g, '');
+
+        const whatsappUrl = `whatsapp://send?phone=${phoneNumber}&text=${encodedText}`;
+
+        res.send(whatsappUrl);
+    } catch (error) {
+        console.log(error);
+
+        return responseOnly(res, 500);
+    }
+};
+
 module.exports = {
     monitorFAP,
     adminApproval,
@@ -439,4 +466,6 @@ module.exports = {
     getJoki,
     updateReportStatus,
     createJoki,
+    updateIsCalled,
+    sendWhatsapp,
 };

@@ -43,5 +43,12 @@ router.post(
     upload.single('photo'),
     Admin.createJoki
 );
+router.get('/send-wa', checkAuth, checkRole('Admin'), Admin.sendWhatsapp);
+router.patch(
+    '/:id/upd-is-called',
+    checkAuth,
+    checkRole('Admin'),
+    Admin.updateIsCalled
+);
 
 module.exports = router;

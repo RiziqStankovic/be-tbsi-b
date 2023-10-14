@@ -4,6 +4,7 @@ const {
     responseValidationError,
     responseOnly,
     responseData,
+    responseAccessDenied,
 } = require('../utils/httpResponse');
 const crudService = require('../utils/crudService');
 const { validateRequest, validationFailed } = require('../utils/validator');
@@ -17,6 +18,7 @@ const { SKPP_HTML_CONTENT, BARCD_FLD_NAME } = require('../utils/constants');
 const { toLocalNumeric, toLocal } = require('../utils/dateUtil');
 const bwipjs = require('bwip-js');
 const sharp = require('sharp');
+const QRCode = require('qrcode');
 const { uploadImage } = require('../utils/cloudinary');
 
 const createFAP = async (req, res) => {
@@ -160,6 +162,12 @@ const generateSkpp = async (req, res) => {
     const { id: userID } = req.auth;
 
     try {
+        const fap = await FAP.findOne({ user: userID }).select('status').lean();
+
+        if (fap.status !== 'PENGGARAPAN SELESAI') {
+            return responseAccessDenied(res);
+        }
+
         const populate = [
             { path: 'user', select: 'serialNo name pob dob nik location' },
         ];
@@ -176,6 +184,7 @@ const generateSkpp = async (req, res) => {
         const toSnakeCase = getReportFap.user.name.replace(/\s/g, '_');
         skppHtml = skppHtml.replace('[TITLE]', 'SKPP_' + toSnakeCase);
         skppHtml = skppHtml.replace('[SERIAL_NO]', getReportFap.user.serialNo);
+        skppHtml = skppHtml.replace('[NAMA_NASABAH]', getReportFap.user.name);
         skppHtml = skppHtml.replace('[NAMA_NASABAH]', getReportFap.user.name);
         skppHtml = skppHtml.replace('[POB]', getReportFap.user.pob);
         skppHtml = skppHtml.replace(
@@ -201,57 +210,33 @@ const generateSkpp = async (req, res) => {
             progressAppArr.join(' ')
         );
 
-        let bcdLink;
-
-        const fap = await FAP.findOne({ user: userID })
-            .select('user barcodeInfo')
-            .lean();
-
-        if (fap.barcodeInfo.isGenerated) {
-            bcdLink = fap.barcodeInfo.url;
-        } else {
-            /* Generate barcode using bwip-js */
-            const barcodeData = 'Jilliyan Ganteng';
-            const barcodeImageBuffer = await new Promise((resolve, reject) => {
-                bwipjs.toBuffer(
-                    {
-                        bcid: 'code128',
-                        text: barcodeData,
-                        scale: 3,
-                        height: 10,
-                        includetext: true,
-                        textxalign: 'center',
-                    },
-                    (err, buffer) => {
-                        if (err) {
-                            reject(err);
-                        } else {
-                            resolve(buffer);
-                        }
-                    }
-                );
-            });
-
-            /* Convert barcode bwip-js to jpwg image using sharp */
-            const barcodeImage = await sharp(barcodeImageBuffer)
-                .jpeg()
-                .toBuffer();
-
-            /* Upload the jpwg image to cloudinary */
-            const uploadBarcode = await uploadImage(
-                barcodeImage,
-                BARCD_FLD_NAME
+        let qrCodeData =
+            getReportFap.user.name +
+            '\nNasabah Malahayati ke ' +
+            getReportFap.user.serialNo +
+            '\nAplikasi Garapan : \n' +
+            progressAppArr.join('\n');
+        const qrCodeImage = await new Promise((resolve, reject) => {
+            bwipjs.toBuffer(
+                {
+                    bcid: 'qrcode',
+                    text: qrCodeData,
+                    scale: 3,
+                    height: 10,
+                    includetext: true,
+                    textxalign: 'center',
+                },
+                (err, buffer) => {
+                    if (err) reject(err);
+                    else resolve(buffer);
+                }
             );
+        });
 
-            /* Update barcode info */
-            fap.barcodeInfo.isGenerated = true;
-            fap.barcodeInfo.public_id = uploadBarcode.public_id;
-            fap.barcodeInfo.url = uploadBarcode.secure_url;
-            await FAP.updateOne({ _id: fap._id }, fap);
-            bcdLink = fap.barcodeInfo.url;
-        }
-
-        skppHtml = skppHtml.replace('[BARCODE]', bcdLink);
+        skppHtml = skppHtml.replace(
+            '[BARCODE]',
+            qrCodeImage.toString('base64')
+        );
 
         /* Generate the pdf using pupeteer */
         const browser = await pupeteer.launch();
@@ -271,8 +256,25 @@ const generateSkpp = async (req, res) => {
     }
 };
 
-const getReport = async (req, res) => {
-    const populate = [{ path: 'user' }];
+const uploadQrCode = async (req, res) => {
+    try {
+        const { file } = req;
+        const { id } = req.auth;
+
+        const findfap = await FAP.findOne({ user: id }).select('barcodeInfo');
+        if (!findfap.barcodeInfo.isGenerated) {
+            const uplQrCode = await uploadImage(file.buffer, BARCD_FLD_NAME);
+            findfap.barcodeInfo.isGenerated = true;
+            findfap.barcodeInfo.public_id = uplQrCode.public_id;
+            findfap.barcodeInfo.url = uplQrCode.secure_url;
+            await FAP.updateOne({ user: id }, findfap);
+        }
+
+        return responseData(res, 200, null, 'Upload qr code success.');
+    } catch (error) {
+        console.log(error);
+        return responseOnly(res, 500);
+    }
 };
 
 const getReportFap = async (req, res) => {
@@ -337,4 +339,5 @@ module.exports = {
     createFAP,
     generateSkpp,
     getReportFap,
+    uploadQrCode,
 };

@@ -55,10 +55,12 @@ const schema = new Schema(
         reportStatus: {
             firstReport: {
                 type: String,
+                enum: ['1', '0'],
                 default: '0',
             },
             secondReport: {
                 type: String,
+                enum: ['1', '0'],
                 default: '0',
             },
         },
@@ -66,6 +68,11 @@ const schema = new Schema(
             isGenerated: { type: Boolean, default: false },
             public_id: String,
             url: String,
+        },
+        isCalled: {
+            type: String,
+            enum: ['1', '0'],
+            default: '0',
         },
     },
     { timestamps: true }
