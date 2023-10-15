@@ -1,7 +1,9 @@
 const { decodeToken } = require('../utils/jwt');
-const { responseOnly } = require('../utils/httpResponse');
+const { responseOnly, responseAccessDenied } = require('../utils/httpResponse');
+const { default: mongoose } = require('mongoose');
+const { setting } = require('../utils/constants');
 
-const checkAuth = (req, res, next) => {
+const checkAuth = async (req, res, next) => {
     const authHeader = req.headers.authorization;
 
     if (!authHeader) {
