@@ -7,18 +7,12 @@ const {
     responseAccessDenied,
 } = require('../utils/httpResponse');
 const crudService = require('../utils/crudService');
-const { validateRequest, validationFailed } = require('../utils/validator');
-const fs = require('fs');
-const htmlToPdf = require('html-pdf');
-const path = require('path');
+const { validateRequest } = require('../utils/validator');
 const pupeteer = require('puppeteer');
-const User = require('../models/User');
 const ReportFAP = require('../models/ReportFAP');
 const { SKPP_HTML_CONTENT, BARCD_FLD_NAME } = require('../utils/constants');
 const { toLocalNumeric, toLocal } = require('../utils/dateUtil');
 const bwipjs = require('bwip-js');
-const sharp = require('sharp');
-const QRCode = require('qrcode');
 const { uploadImage } = require('../utils/cloudinary');
 
 const createFAP = async (req, res) => {
