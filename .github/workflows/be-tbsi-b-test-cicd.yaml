@@ -38,7 +38,11 @@ jobs:
           tags: |
             ${{ secrets.DOCKERHUB_USERNAME }}/${{ vars.TBSI_DOCKER }}:${{ vars.TBSI_TAGS }}${{ github.run_number }}
 
-
+  Push:
+    name: Push
+    needs: build
+    runs-on: ${{ vars.RUNNER }}
+    steps:
       - name: Deploy to Kubernetes
         run: |
           helm upgrade be-tbsi-b --kubeconfig ${{ secrets.KUBE_CONFIG }} ${{ vars.TBSI_CHART }} --install --namespace=tbsi --set image.repository=${{ secrets.DOCKERHUB_USERNAME }}/${{ vars.TBSI_DOCKER }}:${{ vars.TBSI_TAGS }}${{ github.run_number }}
