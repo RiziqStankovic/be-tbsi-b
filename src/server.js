@@ -14,7 +14,7 @@ app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 app.use('/api', routes);
 
 app.use((_, res) => {
-    return res.status(404).json('API not found');
+    return res.status(404).json('be-tbsi-b API not found');
 });
 
 module.exports = app;
