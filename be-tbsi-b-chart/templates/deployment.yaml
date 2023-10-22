@@ -1,0 +1,39 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: {{ .Values.appName }}
+  name: {{ .Values.appName }}
+  namespace: {{ .Values.namespace }}
+spec:
+  selector:
+    matchLabels:
+      app: {{ .Values.appName }}
+  strategy:
+    rollingUpdate:
+      maxSurge: {{ .Values.strategy.surge }}
+      maxUnavailable: {{ .Values.strategy.unavailable }}
+    type: {{ .Values.strategy.type }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.appName }}
+    spec:
+      containers:
+      - image: {{ .Values.image.repository }}
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        name: {{ .Values.appName }}
+        volumeMounts:
+        - name: {{ .Values.secret.vmountName }} 
+          mountPath: {{ .Values.secret.vmountPath }}
+        ports:
+        - containerPort: {{ .Values.service.port }}
+        resources:
+          {{- toYaml .Values.resources | nindent 12 }}
+      # imagePullSecrets:
+      # - name: {{ .Values.image.pullSecret }}
+      volumes:
+      - name: {{ .Values.secret.volumeName }}
+        secret:
+          secretName: {{.Values.secret.secretName}}
+      restartPolicy: {{ .Values.restartPolicy }}

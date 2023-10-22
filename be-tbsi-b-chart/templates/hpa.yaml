@@ -1,0 +1,13 @@
+apiVersion: autoscaling/v1
+kind: HorizontalPodAutoscaler
+metadata:
+  name: {{ .Values.hpa.name }}
+  namespace: {{ .Values.namespace }}
+spec:
+  maxReplicas: {{ .Values.hpa.max }}
+  minReplicas: {{ .Values.hpa.min }}
+  scaleTargetRef:
+    apiVersion: apps/v1beta2
+    kind: Deployment
+    name: {{ .Values.appName }}
+  targetCPUUtilizationPercentage: {{ .Values.hpa.targetCPU }}
