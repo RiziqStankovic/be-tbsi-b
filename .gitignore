@@ -1,25 +1,2 @@
-# Node.js
-node_modules/
-npm-debug.log
-
-# Environment variables
-.env
-
-# Logs
-logs
-*.log
-
-# Dependency directories
-jspm_packages/
-bower_components/
-package-lock.json
-
-# Build output
-dist/
-build/
-out/
-out/
-out/
-
-# doc
-dump.txt
+# package*.json
+node_modules
